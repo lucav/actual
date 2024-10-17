@@ -74,9 +74,9 @@ export function cashFlowByDate(
   conditionsOp: 'and' | 'or',
 ) {
   const start = monthUtils.firstDayOfMonth(startMonth);
-  const end = monthUtils.lastDayOfMonth(endMonth);
-  const fixedEnd =
-    end > monthUtils.currentDay() ? monthUtils.currentDay() : end;
+  const fixedEnd = monthUtils.lastDayOfMonth(endMonth);
+  //const fixedEnd =
+  //  end > monthUtils.currentDay() ? monthUtils.currentDay() : end;
 
   return async (
     spreadsheet: ReturnType<typeof useSpreadsheet>,

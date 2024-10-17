@@ -84,9 +84,9 @@ export function validateEnd(
 
 export function validateRange(earliest: string, start: string, end: string) {
   const latest = monthUtils.currentDay();
-  if (end > latest) {
+  /*if (end > latest) {
     end = latest;
-  }
+  }*/
   if (start < earliest) {
     start = earliest;
   }
@@ -119,9 +119,9 @@ function boundedRange(
       break;
   }
 
-  if (end > latest) {
+  /*if (end > latest) {
     end = latest;
-  }
+  }*/
   if (start < earliest) {
     start = earliest;
   }

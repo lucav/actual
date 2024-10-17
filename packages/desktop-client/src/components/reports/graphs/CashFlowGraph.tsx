@@ -119,6 +119,12 @@ export function CashFlowGraph({
     transfers: graphData.transfers[idx].y,
   }));
 
+  const today = new Date();
+  const pastData = data.filter(dt => !d.isAfter(new Date(dt.date), today));
+  const futureData = data.map(dt =>
+    d.isAfter(new Date(dt.date), today) || d.isSameDay(new Date(dt.date), today) ? dt : { ...dt, balance: null }
+  );
+ 
   return (
     <Container style={style}>
       {(width, height) => (
@@ -131,6 +137,7 @@ export function CashFlowGraph({
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
+              allowDuplicatedCategory={false}
               dataKey="date"
               tick={{ fill: theme.reportsLabel }}
               tickFormatter={x => {
@@ -174,14 +181,32 @@ export function CashFlowGraph({
               maxBarSize={MAX_BAR_SIZE}
               animationDuration={ANIMATION_DURATION}
             />
+
             <Line
               type="monotone"
+              isAnimationActive={false}              
+              data={pastData}
               dataKey="balance"
+              strokeDasharray="none"
               dot={false}
               hide={!showBalance}
               stroke={theme.pageTextLight}
               strokeWidth={2}
               animationDuration={ANIMATION_DURATION}
+              activeDot={{ fill: 'red', r: 5 }}
+            />
+
+            <Line
+              type="monotone"
+              data={futureData}
+              dataKey="balance"
+              dot={false}
+              hide={!showBalance}
+              stroke={theme.pageTextLight}
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              animationDuration={ANIMATION_DURATION}
+              activeDot={{ fill: 'red', r: 5 }}
             />
           </ComposedChart>
         </ResponsiveContainer>
