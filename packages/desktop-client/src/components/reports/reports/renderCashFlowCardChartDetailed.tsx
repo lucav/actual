@@ -1,7 +1,7 @@
 // @ts-strict-ignore
 import React from 'react';
 
-import { CashFlowGraph } from '../graphs/CashFlowGraph';
+import { FutureCashFlowGraph } from '../graphs/FutureCashFlowGraph';
 
 export const renderCashFlowCardChartDetailed = (
   graphData: {
@@ -13,7 +13,7 @@ export const renderCashFlowCardChartDetailed = (
   isConcise: boolean,
 ) => {
   return (
-    <CashFlowGraph
+    <FutureCashFlowGraph
       graphData={graphData}
       isConcise={isConcise}
       showBalance={true}
