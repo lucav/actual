@@ -6,7 +6,7 @@ import { useSpreadsheet } from 'loot-core/src/client/SpreadsheetProvider';
 import { send } from 'loot-core/src/platform/client/fetch';
 import * as monthUtils from 'loot-core/src/shared/months';
 import { q } from 'loot-core/src/shared/query';
-import { integerToCurrency, integerToAmount } from 'loot-core/src/shared/util';
+import { integerToCurrency, integerToAmount, toRelaxedNumber, getNumberFormat } from 'loot-core/src/shared/util';
 import { type RuleConditionEntity } from 'loot-core/types/models';
 
 import { AlignedText } from '../../common/AlignedText';
@@ -97,41 +97,7 @@ export function futureCashFlowByDate(
     spreadsheet: ReturnType<typeof useSpreadsheet>,
     setData: (data: ReturnType<typeof recalculate>) => void,
   ) => {
-    const { filters } = await send('make-filters-from-conditions', {
-      conditions: conditions.filter(cond => !cond.customName),
-    });
-    const conditionsOpKey = conditionsOp === 'or' ? '$or' : '$and';
-
-    // balance mese odierno
-    const actualMonth = monthUtils.monthFromDate(today);
-    const sheetName = monthUtils.sheetForMonth(actualMonth);  
-    const totsaved = await spreadsheet.get(sheetName, 'total-saved');
-
-    projectedBalances.push({ x: endOfCurrentMonth, y: totsaved.value / 100, premadeLabel: <span>Forecasted</span>, amount: totsaved.value });
-
-    // income budgeted mese odierno
-    const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
-    projectedIncome.push({ x: endOfCurrentMonth, y: totincome.value / 100 });
-
-    // expense budgeted mese odierno
-    const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
-    projectedExpenses.push({ x: endOfCurrentMonth, y: -(totbudgeted.value / 100) });
-
-    if(actualMonth != endMonth){
-      // balance mese finale se diverso da mese odierno
-      const sheetName2 = monthUtils.sheetForMonth(endMonth);  
-      const totsaved2 = await spreadsheet.get(sheetName2, 'total-saved');
-      projectedBalances.push({ x: endOfNextMonth, y: (totsaved.value + totsaved2.value) / 100, premadeLabel: <span>Forecasted</span>, amount: totsaved.value + totsaved2.value });
-      
-      // income budgeted mese finale se diverso da mese odierno
-      const totincome2 = await spreadsheet.get(sheetName2, 'total-budget-income');
-      projectedIncome.push({ x: endOfNextMonth, y: totincome2.value / 100 });
-
-      // expense budgeted mese finale se diverso da mese odierno
-      const totbudgeted2 = await spreadsheet.get(sheetName2, 'total-budgeted');
-      projectedExpenses.push({ x: endOfNextMonth, y: -(totbudgeted2.value / 100) });
-    }        
-
+    
     function makeQuery() {
       const query = q('transactions')
         .filter({
@@ -164,7 +130,13 @@ export function futureCashFlowByDate(
         ]);
     }
 
-    return await runAll(
+    const { filters } = await send('make-filters-from-conditions', {
+      conditions: conditions.filter(cond => !cond.customName),
+    });
+    const conditionsOpKey = conditionsOp === 'or' ? '$or' : '$and';
+    
+    let startingBalance:number = 0;
+    await runAll(
       [
         q('transactions')
           .filter({
@@ -172,20 +144,59 @@ export function futureCashFlowByDate(
             date: { $transform: '$month', $lt: start },
             'account.offbudget': false,
           })
-          .calculate({ $sum: '$amount' }),
+          .calculate({ $sum: '$amount' })      
+      ],
+      data => {
+        startingBalance = parseInt(data);    
+      },
+    );
+
+    // balance mese odierno
+    const actualMonth = monthUtils.monthFromDate(today);
+    const sheetName = monthUtils.sheetForMonth(actualMonth);  
+    
+    const totsaved = await spreadsheet.get(sheetName, 'total-saved');
+
+    projectedBalances.push({ x: endOfCurrentMonth, y: integerToAmount(startingBalance + parseInt(totsaved.value)), premadeLabel: <span>Forecasted</span>, amount: (startingBalance + parseInt(totsaved.value)) });
+
+    // income budgeted mese odierno
+    const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
+    projectedIncome.push({ x: endOfCurrentMonth, y: integerToAmount(parseInt(totincome.value)) });
+
+    // expense budgeted mese odierno
+    const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
+    projectedExpenses.push({ x: endOfCurrentMonth, y: -integerToAmount(parseInt(totbudgeted.value)) });
+
+    if(actualMonth != endMonth){
+      // balance mese finale se diverso da mese odierno
+      const sheetName2 = monthUtils.sheetForMonth(endMonth);  
+      const totsaved2 = await spreadsheet.get(sheetName2, 'total-saved');
+      projectedBalances.push({ x: endOfNextMonth, y: (projectedBalances[0].y + integerToAmount(parseInt(totsaved2.value))), premadeLabel: <span>Forecasted</span>, amount: (projectedBalances[0].amount + parseInt(totsaved2.value)) });
+      
+      // income budgeted mese finale se diverso da mese odierno
+      const totincome2 = await spreadsheet.get(sheetName2, 'total-budget-income');
+      projectedIncome.push({ x: endOfNextMonth, y: integerToAmount(parseInt(totincome2.value)) });
+
+      // expense budgeted mese finale se diverso da mese odierno
+      const totbudgeted2 = await spreadsheet.get(sheetName2, 'total-budgeted');
+      projectedExpenses.push({ x: endOfNextMonth, y: -integerToAmount(parseInt(totbudgeted2.value)) });
+    }        
+
+    return await runAll(
+      [
         makeQuery().filter({ amount: { $gt: 0 } }),
         makeQuery().filter({ amount: { $lt: 0 } }),        
       ],
       data => {
-        setData(recalculate(data, start, fixedEnd, isConcise));
+        setData(recalculate(startingBalance, data, start, fixedEnd, isConcise));        
       },
     );
   };
 }
 
 function recalculate(  
+  startingBalance: number,
   data: [
-    number,
     Array<{ date: string; isTransfer: string | null; amount: number }>,
     Array<{ date: string; isTransfer: string | null; amount: number }>,
   ],
@@ -193,7 +204,7 @@ function recalculate(
   end: string,
   isConcise: boolean
 ) {
-  const [startingBalance, income, expense] = data;
+  const [income, expense] = data;
   const convIncome = income.map(t => {
     return { ...t, isTransfer: t.isTransfer !== null };
   });
@@ -226,10 +237,10 @@ function recalculate(
     }>;
   }>(
     (res, date) => {
-      let income = 0;
-      let expense = 0;
-      let creditTransfers = 0;
-      let debitTransfers = 0;
+      let income:number = 0;
+      let expense:number = 0;
+      let creditTransfers:number = 0;
+      let debitTransfers:number = 0;
 
       if (incomes[date]) {
         income = !incomes[date].false ? 0 : incomes[date].false;
