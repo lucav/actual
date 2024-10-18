@@ -2,7 +2,7 @@
 import React from 'react';
 import { Trans } from 'react-i18next';
 
-import { Block } from 'glamor/jsxstyle';
+import { Block } from '../../common/Block';
 
 import { integerToCurrency } from 'loot-core/shared/util';
 
