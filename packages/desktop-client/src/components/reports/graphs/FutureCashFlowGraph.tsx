@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { CSSProperties, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as d from 'date-fns';
@@ -23,7 +23,7 @@ import {
 } from 'loot-core/src/shared/util';
 
 import { usePrivacyMode } from '../../../hooks/usePrivacyMode';
-import { type CSSProperties, theme } from '../../../style';
+import { theme } from '../../../style';
 import { AlignedText } from '../../common/AlignedText';
 import { chartTheme } from '../chart-theme';
 import { Container } from '../Container';

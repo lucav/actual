@@ -602,6 +602,7 @@ function PayeeCell({
             flex: 1,
             padding: 4,
             color: theme.pageTextSubdued,
+            overflow: 'hidden'
           }}
         >
           <PayeeIcons
@@ -653,6 +654,7 @@ function PayeeCell({
     </Cell>
   ) : (
     <CustomCell
+      style={{ overflow: 'hidden' }}
       width="flex"
       name="payee"
       textAlign="flex"
