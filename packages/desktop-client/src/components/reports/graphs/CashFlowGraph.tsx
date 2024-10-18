@@ -119,12 +119,6 @@ export function CashFlowGraph({
     transfers: graphData.transfers[idx].y,
   }));
 
-  const today = new Date();
-  const pastData = data.filter(dt => !d.isAfter(new Date(dt.date), today));
-  const futureData = data.map(dt =>
-    d.isAfter(new Date(dt.date), today) || d.isSameDay(new Date(dt.date), today) ? dt : { ...dt, balance: null }
-  );
- 
   return (
     <Container style={style}>
       {(width, height) => (
@@ -185,7 +179,7 @@ export function CashFlowGraph({
             <Line
               type="monotone"
               isAnimationActive={false}              
-              data={pastData}
+              data={data}
               dataKey="balance"
               strokeDasharray="none"
               dot={false}
@@ -193,21 +187,8 @@ export function CashFlowGraph({
               stroke={theme.pageTextLight}
               strokeWidth={2}
               animationDuration={ANIMATION_DURATION}
-              activeDot={{ fill: 'red', r: 5 }}
             />
 
-            <Line
-              type="monotone"
-              data={futureData}
-              dataKey="balance"
-              dot={false}
-              hide={!showBalance}
-              stroke={theme.pageTextLight}
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              animationDuration={ANIMATION_DURATION}
-              activeDot={{ fill: 'red', r: 5 }}
-            />
           </ComposedChart>
         </ResponsiveContainer>
       )}

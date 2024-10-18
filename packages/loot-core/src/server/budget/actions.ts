@@ -13,6 +13,14 @@ export async function getSheetValue(
   return safeNumber(typeof node.value === 'number' ? node.value : 0);
 }
 
+export function getSheetValueNoPromise(
+  sheetName: string,
+  cell: string,
+): number {
+  const node = sheet.getCell(sheetName, cell);
+  return safeNumber(typeof node.value === 'number' ? node.value : 0);
+}
+
 // We want to only allow the positive movement of money back and
 // forth. buffered should never be allowed to go into the negative,
 // and you shouldn't be allowed to pull non-existent money from

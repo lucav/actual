@@ -37,6 +37,7 @@ import { LoadingIndicator } from '../LoadingIndicator';
 import { calculateTimeRange } from '../reportRanges';
 
 import { useCashFlowDataDetailed } from './useCashFlowDataDetailed';
+import { FutureCashFlowGraph } from '../graphs/FutureCashFlowGraph';
 
 export const defaultTimeFrame = {
   start: monthUtils.dayFromDate(monthUtils.currentMonth()),
@@ -91,6 +92,8 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
   const [end, setEnd] = useState(initialEnd);
   const [mode, setMode] = useState(initialMode);
   const [showBalance, setShowBalance] = useState(true);
+  const today = new Date();
+  const [isFutureCashFlow, setisFutureCashFlow] = useState(d.isAfter(new Date(end), today) ? true : false);
 
   const [isConcise, setIsConcise] = useState(() => {
     const numDays = d.differenceInCalendarDays(
@@ -137,11 +140,17 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
       d.parseISO(start),
     );
     const isConcise = numDays > 31 * 3;
+    const today = new Date();
 
     setStart(start);
     setEnd(end);
     setMode(mode);
     setIsConcise(isConcise);
+    if(d.isAfter(new Date(end), today)){
+      setisFutureCashFlow(true);
+    }else{
+      setisFutureCashFlow(false);
+    }
   }
 
   const navigate = useNavigate();
@@ -312,11 +321,19 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
           </Text>
         </View>
 
-        <CashFlowGraph
-          graphData={graphData}
-          isConcise={isConcise}
-          showBalance={showBalance}
-        />
+        {
+          isFutureCashFlow ? 
+          <FutureCashFlowGraph
+            graphData={graphData}
+            isConcise={isConcise}
+            showBalance={showBalance}
+          /> :
+          <CashFlowGraph
+            graphData={graphData}
+            isConcise={isConcise}
+            showBalance={showBalance}
+          />
+        }
 
         <View
           style={{
