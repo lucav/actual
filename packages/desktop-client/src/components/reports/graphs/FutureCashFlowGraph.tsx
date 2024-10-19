@@ -112,15 +112,18 @@ export function FutureCashFlowGraph({
   const privacyMode = usePrivacyMode();
   const [yAxisIsHovered, setYAxisIsHovered] = useState(false);
 
+  const today = new Date();
+
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
-    expenses: row.y,
-    income: graphData.income[idx].y,
+    expenses: d.isAfter(row.x, today) ? 0 : row.y,
+    income: d.isAfter(row.x, today) ? 0 : graphData.income[idx].y,
     balance: graphData.balances[idx].y,
     transfers: graphData.transfers[idx].y,
+    incomeForecast: d.isAfter(row.x, today) || d.isSameDay(row.x, today) ? graphData.income[idx].y : 0,
+    expensesForecast: d.isAfter(row.x, today) || d.isSameDay(row.x, today) ? row.y : 0,
   }));
 
-  const today = new Date();
   const pastData = data.filter(dt => !d.isAfter(new Date(dt.date), today));
   const futureData = data.map(dt =>
     d.isAfter(new Date(dt.date), today) || d.isSameDay(new Date(dt.date), today) ? dt : { ...dt, balance: null }
@@ -136,6 +139,18 @@ export function FutureCashFlowGraph({
             stackOffset="sign"
             data={data}
           >
+            <defs>
+              {/* Definizione di un pattern SVG con strisce bianche e rosse diagonali a 45° */}
+              <pattern id="stripedPatternRed" width={8} height={8} patternUnits="userSpaceOnUse">
+                <rect width={8} height={8} fill={chartTheme.colors.red} />
+                <line x1={0} y1={8} x2={8} y2={0} stroke="white" strokeWidth={2} />
+              </pattern>
+              {/* Definizione di un pattern SVG con strisce bianche e blu diagonali a 45° */}
+              <pattern id="stripedPatternBlue" width={8} height={8} patternUnits="userSpaceOnUse">
+                <rect width={8} height={8} fill={chartTheme.colors.blue} />
+                <line x1={0} y1={8} x2={8} y2={0} stroke="white" strokeWidth={2} />
+              </pattern>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               allowDuplicatedCategory={false}
@@ -177,10 +192,27 @@ export function FutureCashFlowGraph({
             />
             <Bar
               dataKey="expenses"
-              stackId="a"
+              stackId="a"              
               fill={chartTheme.colors.red}
               maxBarSize={MAX_BAR_SIZE}
               animationDuration={ANIMATION_DURATION}
+            />
+
+            <Bar
+              dataKey="incomeForecast"
+              stackId="a"
+              fill="url(#stripedPatternBlue)"
+              maxBarSize={MAX_BAR_SIZE}
+              animationDuration={ANIMATION_DURATION}
+              opacity="0.7"
+            />
+            <Bar
+              dataKey="expensesForecast"
+              stackId="a"              
+              fill="url(#stripedPatternRed)"
+              maxBarSize={MAX_BAR_SIZE}
+              animationDuration={ANIMATION_DURATION}
+              opacity="0.7"
             />
 
             <Line
