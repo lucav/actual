@@ -27,6 +27,7 @@ import { theme } from '../../../style';
 import { AlignedText } from '../../common/AlignedText';
 import { chartTheme } from '../chart-theme';
 import { Container } from '../Container';
+import { firstDayOfMonth } from 'loot-core/shared/months';
 
 const MAX_BAR_SIZE = 50;
 const ANIMATION_DURATION = 1000; // in ms
@@ -34,6 +35,10 @@ const ANIMATION_DURATION = 1000; // in ms
 type CustomTooltipProps = TooltipProps<number, 'date'> & {
   isConcise: boolean;
 };
+
+function getFirstDayOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
 
 function CustomTooltip({ active, payload, isConcise }: CustomTooltipProps) {
   const { t } = useTranslation();
@@ -64,16 +69,16 @@ function CustomTooltip({ active, payload, isConcise }: CustomTooltipProps) {
         <div style={{ lineHeight: 1.5 }}>
           <AlignedText
             left={t('Income:')}
-            right={amountToCurrency(data.income)}
+            right={amountToCurrency(data.income == 0 ? data.incomeForecast : data.income)}
           />
           <AlignedText
             left={t('Expenses:')}
-            right={amountToCurrency(data.expenses)}
+            right={amountToCurrency(data.expenses == 0 ? data.expensesForecast : data.expenses)}
           />
           <AlignedText
             left={t('Change:')}
             right={
-              <strong>{amountToCurrency(data.income + data.expenses)}</strong>
+              <strong>{amountToCurrency(parseFloat(data.income == 0 ? data.incomeForecast : data.income) + parseFloat(data.expenses == 0 ? data.expensesForecast : data.expenses))}</strong>
             }
           />
           {data.transfers !== 0 && (
@@ -114,6 +119,8 @@ export function FutureCashFlowGraph({
 
   const today = new Date();
 
+  console.log(graphData);
+
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
     expenses: d.isAfter(row.x, today) ? 0 : row.y,
@@ -126,9 +133,9 @@ export function FutureCashFlowGraph({
 
   const pastData = data.filter(dt => !d.isAfter(new Date(dt.date), today));
   const futureData = data.map(dt =>
-    d.isAfter(new Date(dt.date), today) || d.isSameDay(new Date(dt.date), today) ? dt : { ...dt, balance: null }
+    d.isAfter(new Date(dt.date), today) || d.isSameDay(new Date(dt.date), today) || (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)) ) ? dt : { ...dt, balance: null }
   );
- 
+
   return (
     <Container style={style}>
       {(width, height) => (

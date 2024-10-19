@@ -79,9 +79,11 @@ const projectedBalances: Array<{
 const today = new Date();
 // Fine del mese corrente
 const endOfCurrentMonth = getEndOfMonth(today);
+const firstOfCurrentMonth = getFirstDayOfMonth(today);
 
 // Fine del mese successivo
 const endOfNextMonth = getEndOfMonth(new Date(today.getFullYear(), today.getMonth() + 1));
+const firstOfNextMonth = getFirstDayOfMonth(new Date(today.getFullYear(), today.getMonth() + 1));
 
 export function futureCashFlowByDate(
   startMonth: string,
@@ -141,7 +143,7 @@ export function futureCashFlowByDate(
         q('transactions')
           .filter({
             [conditionsOpKey]: filters,
-            date: { $transform: '$month', $lt: start },
+            date: { $transform: '$month', $lt: getFirstDayOfMonth(today) },
             'account.offbudget': false,
           })
           .calculate({ $sum: '$amount' })      
@@ -157,46 +159,63 @@ export function futureCashFlowByDate(
     
     const totsaved = await spreadsheet.get(sheetName, 'total-saved');
 
-    projectedBalances.push({ x: endOfCurrentMonth, y: integerToAmount(startingBalance + parseInt(totsaved.value)), premadeLabel: <span>Forecasted</span>, amount: (startingBalance + parseInt(totsaved.value)) });
+    projectedBalances.splice(0, projectedBalances.length);
+    projectedExpenses.splice(0, projectedExpenses.length);
+    projectedIncome.splice(0, projectedIncome.length);
+
+    projectedBalances.push({ x: isConcise ? firstOfCurrentMonth : endOfCurrentMonth, 
+      y: integerToAmount(startingBalance + parseInt(totsaved.value)), 
+      premadeLabel: <span>Forecasted</span>, 
+      amount: (startingBalance + parseInt(totsaved.value)) });
 
     // income budgeted mese odierno
     const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
-    projectedIncome.push({ x: endOfCurrentMonth, y: integerToAmount(parseInt(totincome.value)) });
+    projectedIncome.push({ x: isConcise ? firstOfCurrentMonth : endOfCurrentMonth, y: integerToAmount(parseInt(totincome.value)) });
 
     // expense budgeted mese odierno
     const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
-    projectedExpenses.push({ x: endOfCurrentMonth, y: -integerToAmount(parseInt(totbudgeted.value)) });
+    projectedExpenses.push({ x: isConcise ? firstOfCurrentMonth : endOfCurrentMonth, y: -integerToAmount(parseInt(totbudgeted.value)) });
 
     if(actualMonth != endMonth){
       // balance mese finale se diverso da mese odierno
       const sheetName2 = monthUtils.sheetForMonth(endMonth);  
       const totsaved2 = await spreadsheet.get(sheetName2, 'total-saved');
-      projectedBalances.push({ x: endOfNextMonth, y: (projectedBalances[0].y + integerToAmount(parseInt(totsaved2.value))), premadeLabel: <span>Forecasted</span>, amount: (projectedBalances[0].amount + parseInt(totsaved2.value)) });
+      projectedBalances.push({ x: isConcise ? firstOfNextMonth : endOfNextMonth, 
+        y: (projectedBalances[0].y + integerToAmount(parseInt(totsaved2.value))), 
+        premadeLabel: <span>Forecasted</span>, 
+        amount: (projectedBalances[0].amount + parseInt(totsaved2.value)) });
       
       // income budgeted mese finale se diverso da mese odierno
       const totincome2 = await spreadsheet.get(sheetName2, 'total-budget-income');
-      projectedIncome.push({ x: endOfNextMonth, y: integerToAmount(parseInt(totincome2.value)) });
+      projectedIncome.push({ x: isConcise ? firstOfNextMonth : endOfNextMonth, y: integerToAmount(parseInt(totincome2.value)) });
 
       // expense budgeted mese finale se diverso da mese odierno
       const totbudgeted2 = await spreadsheet.get(sheetName2, 'total-budgeted');
-      projectedExpenses.push({ x: endOfNextMonth, y: -integerToAmount(parseInt(totbudgeted2.value)) });
+      projectedExpenses.push({ x: isConcise ? firstOfNextMonth : endOfNextMonth, y: -integerToAmount(parseInt(totbudgeted2.value)) });
     }        
 
     return await runAll(
       [
+        q('transactions')
+          .filter({
+            [conditionsOpKey]: filters,
+            date: { $transform: '$month', $lt: start },
+            'account.offbudget': false,
+          })
+          .calculate({ $sum: '$amount' }),
         makeQuery().filter({ amount: { $gt: 0 } }),
         makeQuery().filter({ amount: { $lt: 0 } }),        
       ],
       data => {
-        setData(recalculate(startingBalance, data, start, fixedEnd, isConcise));        
+        setData(recalculate(data, start, fixedEnd, isConcise));        
       },
     );
   };
 }
 
-function recalculate(  
-  startingBalance: number,
+function recalculate(
   data: [
+    number,
     Array<{ date: string; isTransfer: string | null; amount: number }>,
     Array<{ date: string; isTransfer: string | null; amount: number }>,
   ],
@@ -204,7 +223,7 @@ function recalculate(
   end: string,
   isConcise: boolean
 ) {
-  const [income, expense] = data;
+  const [startingBalance, income, expense] = data;
   const convIncome = income.map(t => {
     return { ...t, isTransfer: t.isTransfer !== null };
   });
@@ -299,7 +318,7 @@ function recalculate(
     { expenses: [], income: [], transfers: [], balances: [] },
   );
 
-  const forecast = populateForecast(graphData);
+  const forecast = populateForecast(graphData, isConcise);
 
   const { balances } = forecast;
 
@@ -316,6 +335,9 @@ function recalculate(
 function getEndOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0); // Il giorno '0' restituisce l'ultimo giorno del mese precedente
 }
+function getFirstDayOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
 
 function updateArray(
   originalArray: Array<{ x: Date; y: number }>,
@@ -323,7 +345,7 @@ function updateArray(
 ): Array<{ x: Date; y: number }> {
   newData.map((newItem) => {
     const index = originalArray.findIndex(
-      (item) => item.x.getTime() === newItem.x.getTime()
+      (item) => d.isSameDay(item.x, newItem.x)
     );
     if (index !== -1) {
       // Sostituiamo l'elemento esistente
@@ -348,60 +370,62 @@ function populateForecast(graphData:{
     premadeLabel: JSX.Element;
     amount: number;
   }>;
-}) {
+}, isConcise: boolean) {
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const newBalanceNextMonth = projectedBalances.find(
-    (balance) => balance.x.getTime() === endOfNextMonth.getTime()
+    (balance) => d.isSameDay(balance.x, endOfNextMonth) ||
+     (isConcise && d.isSameDay(balance.x, firstOfNextMonth))
   );
   const newBalanceCurrentMonth = projectedBalances.find(
-    (balance) => balance.x.getTime() === endOfCurrentMonth.getTime()
+    (balance) => d.isSameDay(balance.x, endOfCurrentMonth) ||
+      (isConcise && d.isSameDay(balance.x, firstOfCurrentMonth))
   );
-
-  // Troviamo l'elemento di domani in graphData.balances
-  const nextDayBalance = graphData.balances.find(
-    (balance) => balance.x.getTime() === tomorrow.setHours(0, 0, 0, 0)
-  );
-
-  if (newBalanceNextMonth && nextDayBalance) {
-    const amountDifference = newBalanceCurrentMonth.amount - nextDayBalance.amount;
-    const daysBetween =
-      (endOfCurrentMonth.getTime() - tomorrow.getTime()) / (1000 * 60 * 60 * 24);
-    const dailyIncrement = amountDifference / daysBetween;
-
-    const amountDifferenceNextMonth = newBalanceNextMonth.amount - newBalanceCurrentMonth.amount;
-    const daysBetweenNextMonth =
-      (endOfNextMonth.getTime() - endOfCurrentMonth.getTime()) / (1000 * 60 * 60 * 24);
-    const dailyIncrementNextMonth = amountDifferenceNextMonth / daysBetweenNextMonth;
-
+  
+  if (newBalanceCurrentMonth) {
+    
     graphData.balances = graphData.balances.map((balance) => {
-      if (
-        balance.x.getTime() == endOfNextMonth.getTime()
-      ) {
+      if (d.isSameDay(balance.x, endOfNextMonth) || 
+          (isConcise && d.isSameDay(balance.x, firstOfNextMonth))) {
         // Se l'elemento è nell'intervallo, lo sostituiamo con newBalanceNextMonth
         return { ...newBalanceNextMonth, x: balance.x };
-      }else if (balance.x.getTime() == endOfCurrentMonth.getTime()){
+      } else if (d.isSameDay(balance.x, endOfCurrentMonth) ||
+          (isConcise && d.isSameDay(balance.x, firstOfCurrentMonth))) {
         return { ...newBalanceCurrentMonth, x: balance.x };
-      }else if (
-        balance.x.getTime() >= tomorrow.getTime() &&
-        balance.x.getTime() < endOfCurrentMonth.getTime()
-      ){
-        const daysFromTomorrow = (balance.x.getTime() - tomorrow.getTime()) / (1000 * 60 * 60 * 24);
+      } else if(!isConcise) { 
+        
+        // Troviamo l'elemento di domani in graphData.balances
+        const nextDayBalance = graphData.balances.find(
+          (balance) => d.isSameDay(balance.x, tomorrow)
+        );
+
+        const amountDifference = newBalanceCurrentMonth.amount - nextDayBalance.amount;
+    
+        // Calcoliamo la differenza in giorni tra endOfCurrentMonth e tomorrow
+        const daysBetween = d.differenceInDays(endOfCurrentMonth, tomorrow);
+        const dailyIncrement = amountDifference / daysBetween;
       
-        // Applichiamo la regressione lineare al campo amount
-        balance.amount = nextDayBalance.amount + round(dailyIncrement * daysFromTomorrow, 0);
-        balance.y = balance.amount / 100;
-      }else if (
-        balance.x.getTime() > endOfCurrentMonth.getTime() &&
-        balance.x.getTime() < endOfNextMonth.getTime()
-      ) {
-        const daysFromTomorrow = (balance.x.getTime() - endOfCurrentMonth.getTime()) / (1000 * 60 * 60 * 24);
+        const amountDifferenceNextMonth = newBalanceNextMonth.amount - newBalanceCurrentMonth.amount;
+        
+        // Calcoliamo la differenza in giorni tra endOfNextMonth e endOfCurrentMonth
+        const daysBetweenNextMonth = d.differenceInDays(endOfNextMonth, endOfCurrentMonth);
+        const dailyIncrementNextMonth = amountDifferenceNextMonth / daysBetweenNextMonth;
       
-        // Applichiamo la regressione lineare al campo amount
-        balance.amount = newBalanceCurrentMonth.amount + round(dailyIncrementNextMonth * daysFromTomorrow, 0);
-        balance.y = balance.amount / 100;
+        if (d.isAfter(balance.x, today) && d.isBefore(balance.x, endOfCurrentMonth)) {
+          const daysFromTomorrow = d.differenceInDays(balance.x, tomorrow);
+          
+          // Applichiamo la regressione lineare al campo amount
+          balance.amount = nextDayBalance.amount + round(dailyIncrement * daysFromTomorrow, 0);
+          balance.y = balance.amount / 100;
+        } else if (d.isAfter(balance.x, endOfCurrentMonth) && d.isBefore(balance.x, endOfNextMonth)) {
+          const daysFromTomorrow = d.differenceInDays(balance.x, endOfCurrentMonth);
+          
+          // Applichiamo la regressione lineare al campo amount
+          balance.amount = newBalanceCurrentMonth.amount + round(dailyIncrementNextMonth * daysFromTomorrow, 0);
+          balance.y = balance.amount / 100;
+        }
       }
       // Altrimenti, lasciamo l'elemento invariato
       return balance;
