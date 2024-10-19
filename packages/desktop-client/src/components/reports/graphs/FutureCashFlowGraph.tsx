@@ -119,8 +119,6 @@ export function FutureCashFlowGraph({
 
   const today = new Date();
 
-  console.log(graphData);
-
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
     expenses: d.isAfter(row.x, today) ? 0 : row.y,
