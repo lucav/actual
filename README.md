@@ -1,3 +1,20 @@
+## Main differences between this repo and original repo
+
+- Cash Flow with next month's forecast
+<p align="center">
+  <img src="/1-cashflowforecast.png" />
+</p>
+- Cash Flow Widget with next month's forecast
+<p align="center">
+  <img src="/2-cashflowforecastwidget.png" />
+</p>
+- Cash Flow Widget with next month's forecast detailed
+<p align="center">
+  <img src="/3-cashflowforecastwidgetdetailed.png" />
+</p>
+
+## Original repo
+
 <p align="center">
   <img src="/demo.png" alt="Actualbudget" />
 </p>
