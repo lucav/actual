@@ -372,9 +372,6 @@ function populateForecast(graphData:{
   }>;
 }, isConcise: boolean) {
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
   const newBalanceNextMonth = projectedBalances.find(
     (balance) => d.isSameDay(balance.x, endOfNextMonth) ||
      (isConcise && d.isSameDay(balance.x, firstOfNextMonth))
@@ -398,13 +395,13 @@ function populateForecast(graphData:{
         
         // Troviamo l'elemento di domani in graphData.balances
         const nextDayBalance = graphData.balances.find(
-          (balance) => d.isSameDay(balance.x, tomorrow)
+          (balance) => d.isSameDay(balance.x, today)
         );
 
         const amountDifference = newBalanceCurrentMonth.amount - nextDayBalance.amount;
     
         // Calcoliamo la differenza in giorni tra endOfCurrentMonth e tomorrow
-        const daysBetween = d.differenceInDays(endOfCurrentMonth, tomorrow);
+        const daysBetween = d.differenceInDays(endOfCurrentMonth, today);
         const dailyIncrement = amountDifference / daysBetween;
       
         const amountDifferenceNextMonth = newBalanceNextMonth.amount - newBalanceCurrentMonth.amount;
@@ -414,17 +411,17 @@ function populateForecast(graphData:{
         const dailyIncrementNextMonth = amountDifferenceNextMonth / daysBetweenNextMonth;
       
         if (d.isAfter(balance.x, today) && d.isBefore(balance.x, endOfCurrentMonth)) {
-          const daysFromTomorrow = d.differenceInDays(balance.x, tomorrow);
+          const daysFromTomorrow = d.differenceInDays(balance.x, today);
           
           // Applichiamo la regressione lineare al campo amount
           balance.amount = nextDayBalance.amount + round(dailyIncrement * daysFromTomorrow, 0);
-          balance.y = balance.amount / 100;
+          balance.y = integerToAmount(balance.amount);
         } else if (d.isAfter(balance.x, endOfCurrentMonth) && d.isBefore(balance.x, endOfNextMonth)) {
           const daysFromTomorrow = d.differenceInDays(balance.x, endOfCurrentMonth);
           
           // Applichiamo la regressione lineare al campo amount
           balance.amount = newBalanceCurrentMonth.amount + round(dailyIncrementNextMonth * daysFromTomorrow, 0);
-          balance.y = balance.amount / 100;
+          balance.y = integerToAmount(balance.amount);
         }
       }
       // Altrimenti, lasciamo l'elemento invariato
