@@ -159,8 +159,8 @@ export function getFullRange(start: string) {
   return [start, end, 'full'] as const;
 }
 
-export function getLatestRange(offset: number) {
-  const end = monthUtils.currentMonth();
+export function getLatestRange(offset: number, timeFrame?: Partial<TimeFrame>) {
+  const end = monthUtils.addMonths(monthUtils.currentMonth(), (timeFrame.forecastOffsetMonths ?? 0));
   const start = monthUtils.subMonths(end, offset);
   return [start, end, 'sliding-window'] as const;
 }
@@ -176,25 +176,30 @@ export function calculateTimeRange(
   const end =
     timeFrame?.end ?? defaultTimeFrame?.end ?? monthUtils.currentMonth();
   const mode = timeFrame?.mode ?? defaultTimeFrame?.mode ?? 'sliding-window';
-
+  
   if (mode === 'full') {
     return getFullRange(start);
   }
-  if (mode === 'sliding-window') {
+  if (mode === 'sliding-window') {    
     const offset = monthUtils.differenceInCalendarMonths(end, start);
 
     if (start > end) {
       return [
-        monthUtils.currentMonth(),
-        monthUtils.subMonths(monthUtils.currentMonth(), -offset),
+        end,
+        monthUtils.subMonths(end, -offset),
         'sliding-window',
+        offset
       ] as const;
     }
 
-    return getLatestRange(offset);
+    return getLatestRange(offset, timeFrame);
   }
-
-  return [start, end, 'static'] as const;
+  
+  if(monthUtils.isAfter(end, monthUtils.currentMonth())){
+    return [start, end, 'sliding-window'] as const;
+  }else{
+    return [start, end, 'static', 0] as const;
+  }  
 }
 
 export function calculateSpendingReportTimeRange({

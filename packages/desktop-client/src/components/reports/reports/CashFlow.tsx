@@ -84,6 +84,8 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     pretty: string;
   }>>(null);
 
+  const offset = widget?.meta?.timeFrame.forecastOffsetMonths ?? 0;
+
   const [initialStart, initialEnd, initialMode] = calculateTimeRange(
     widget?.meta?.timeFrame,
     defaultTimeFrame,
@@ -94,7 +96,8 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
   const [showBalance, setShowBalance] = useState(true);
   const today = new Date();
   const [isFutureCashFlow, setisFutureCashFlow] = useState(d.isAfter(new Date(end), today) ? true : false);
-
+  const [forecastOffsetMonths, setForecastOffsetMonths] = useState(offset);
+  
   const [isConcise, setIsConcise] = useState(() => {
     const numDays = d.differenceInCalendarDays(
       d.parseISO(end),
@@ -144,11 +147,15 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
 
     setStart(start);
     setEnd(end);
-    setMode(mode);
+    
     setIsConcise(isConcise);
     if(d.isAfter(new Date(end), today)){
       setisFutureCashFlow(true);
+      setMode('sliding-window');
+      const offset = monthUtils.differenceInCalendarMonths(end, today);
+      setForecastOffsetMonths(offset);
     }else{
+      setMode(mode);
       setisFutureCashFlow(false);
     }
   }
@@ -171,6 +178,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
           start,
           end,
           mode,
+          forecastOffsetMonths
         },
       },
     });
