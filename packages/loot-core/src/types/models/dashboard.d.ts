@@ -5,6 +5,7 @@ export type TimeFrame = {
   start: string;
   end: string;
   mode: 'sliding-window' | 'static' | 'full';
+  forecastOffsetMonths?: number;
 };
 
 type AbstractWidget<
@@ -37,7 +38,7 @@ export type CashFlowWidget = AbstractWidget<
     conditions?: RuleConditionEntity[];
     conditionsOp?: 'and' | 'or';
     timeFrame?: TimeFrame;
-    mode?: 'condensed' | 'full';
+    mode?: 'condensed' | 'full';    
   } | null
 >;
 export type SpendingWidget = AbstractWidget<
