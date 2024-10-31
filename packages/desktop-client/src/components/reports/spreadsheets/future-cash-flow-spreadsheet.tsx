@@ -77,13 +77,6 @@ const projectedBalances: Array<{
     amount: number
 }> = new Array();
 const today = new Date();
-// Fine del mese corrente
-const endOfCurrentMonth = getEndOfMonth(today);
-const firstOfCurrentMonth = getFirstDayOfMonth(today);
-
-// Fine del mese successivo
-const endOfNextMonth = getEndOfMonth(new Date(today.getFullYear(), today.getMonth() + 1));
-const firstOfNextMonth = getFirstDayOfMonth(new Date(today.getFullYear(), today.getMonth() + 1));
 
 export function futureCashFlowByDate(
   startMonth: string,
@@ -94,6 +87,7 @@ export function futureCashFlowByDate(
 ) {
   const start = monthUtils.firstDayOfMonth(startMonth);
   const fixedEnd = monthUtils.lastDayOfMonth(endMonth);
+  const realFixedEnd = isConcise ? monthUtils.firstDayOfMonth(endMonth) : monthUtils.lastDayOfMonth(endMonth);
 
   return async (
     spreadsheet: ReturnType<typeof useSpreadsheet>,
@@ -153,46 +147,50 @@ export function futureCashFlowByDate(
       },
     );
 
-    // balance mese odierno
-    const actualMonth = monthUtils.monthFromDate(today);
-    const sheetName = monthUtils.sheetForMonth(actualMonth);  
-    
-    const totsaved = await spreadsheet.get(sheetName, 'total-saved');
+    //console.log("*** futureCashFlowByDate");
 
     projectedBalances.splice(0, projectedBalances.length);
     projectedExpenses.splice(0, projectedExpenses.length);
     projectedIncome.splice(0, projectedIncome.length);
 
-    projectedBalances.push({ x: isConcise ? firstOfCurrentMonth : endOfCurrentMonth, 
-      y: integerToAmount(startingBalance + parseInt(totsaved.value)), 
-      premadeLabel: <span>Forecasted</span>, 
-      amount: (startingBalance + parseInt(totsaved.value)) });
+    for (let i = 0; i <= 6; i++) {
+      const futureMonth = monthUtils.addMonths(today, i);
+      const futureEnd = isConcise ? monthUtils.firstDayOfMonth(futureMonth) : monthUtils.lastDayOfMonth(futureMonth);
+  
+      //console.log(futureMonth, futureEnd, realFixedEnd);
 
-    // income budgeted mese odierno
-    const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
-    projectedIncome.push({ x: isConcise ? firstOfCurrentMonth : endOfCurrentMonth, y: integerToAmount(parseInt(totincome.value)) });
+      if(d.isAfter(monthUtils.parseDate(futureEnd), monthUtils.parseDate(realFixedEnd))){
+        //console.log("break");
+        break;
+      }
 
-    // expense budgeted mese odierno
-    const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
-    projectedExpenses.push({ x: isConcise ? firstOfCurrentMonth : endOfCurrentMonth, y: -integerToAmount(parseInt(totbudgeted.value)) });
+      const dateEnd = monthUtils.parseDate(futureEnd);
+      dateEnd.setHours(0, 0, 0, 0);
 
-    if(actualMonth != endMonth){
-      // balance mese finale se diverso da mese odierno
-      const sheetName2 = monthUtils.sheetForMonth(endMonth);  
-      const totsaved2 = await spreadsheet.get(sheetName2, 'total-saved');
-      projectedBalances.push({ x: isConcise ? firstOfNextMonth : endOfNextMonth, 
-        y: (projectedBalances[0].y + integerToAmount(parseInt(totsaved2.value))), 
-        premadeLabel: <span>Forecasted</span>, 
-        amount: (projectedBalances[0].amount + parseInt(totsaved2.value)) });
-      
-      // income budgeted mese finale se diverso da mese odierno
-      const totincome2 = await spreadsheet.get(sheetName2, 'total-budget-income');
-      projectedIncome.push({ x: isConcise ? firstOfNextMonth : endOfNextMonth, y: integerToAmount(parseInt(totincome2.value)) });
+      // Calcolo proiezione per ogni mese
+      const sheetName = monthUtils.sheetForMonth(futureMonth);
+      const totsaved = await spreadsheet.get(sheetName, 'total-saved');
+      projectedBalances.push({
+        x: dateEnd,
+        y: (projectedBalances[i - 1]?.y ?? integerToAmount(startingBalance)) + integerToAmount(parseInt(totsaved.value)),
+        premadeLabel: <span>Forecasted</span>,
+        amount: (projectedBalances[i - 1]?.amount ?? startingBalance) + parseInt(totsaved.value)
+      });
+  
+      const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
+      projectedIncome.push({
+        x: dateEnd,
+        y: integerToAmount(parseInt(totincome.value))
+      });
+  
+      const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
+      projectedExpenses.push({
+        x: dateEnd,
+        y: -integerToAmount(parseInt(totbudgeted.value))
+      });
+    }
 
-      // expense budgeted mese finale se diverso da mese odierno
-      const totbudgeted2 = await spreadsheet.get(sheetName2, 'total-budgeted');
-      projectedExpenses.push({ x: isConcise ? firstOfNextMonth : endOfNextMonth, y: -integerToAmount(parseInt(totbudgeted2.value)) });
-    }        
+    //console.log(projectedBalances, projectedIncome, projectedExpenses);
 
     return await runAll(
       [
@@ -207,7 +205,7 @@ export function futureCashFlowByDate(
         makeQuery().filter({ amount: { $lt: 0 } }),        
       ],
       data => {
-        setData(recalculate(data, start, fixedEnd, isConcise));        
+        setData(recalculate(data, start, fixedEnd, isConcise, realFixedEnd));        
       },
     );
   };
@@ -221,7 +219,8 @@ function recalculate(
   ],
   start: string,
   end: string,
-  isConcise: boolean
+  isConcise: boolean,
+  realFixedEnd: string
 ) {
   const [startingBalance, income, expense] = data;
   const convIncome = income.map(t => {
@@ -318,7 +317,7 @@ function recalculate(
     { expenses: [], income: [], transfers: [], balances: [] },
   );
 
-  const forecast = populateForecast(graphData, isConcise);
+  const forecast = populateForecast(graphData, isConcise, realFixedEnd);
 
   const { balances } = forecast;
 
@@ -332,8 +331,11 @@ function recalculate(
   };
 }
 
-function getEndOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0); // Il giorno '0' restituisce l'ultimo giorno del mese precedente
+function getEndOfPreviousMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 0); // Il giorno '0' restituisce l'ultimo giorno del mese precedente
+}
+function getFirstDayOfPreviousMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() - 1, 1);
 }
 function getFirstDayOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -370,65 +372,41 @@ function populateForecast(graphData:{
     premadeLabel: JSX.Element;
     amount: number;
   }>;
-}, isConcise: boolean) {
+}, isConcise: boolean, fixedEnd: string) {
 
-  const newBalanceNextMonth = projectedBalances.find(
-    (balance) => d.isSameDay(balance.x, endOfNextMonth) ||
-     (isConcise && d.isSameDay(balance.x, firstOfNextMonth))
-  );
-  const newBalanceCurrentMonth = projectedBalances.find(
-    (balance) => d.isSameDay(balance.x, endOfCurrentMonth) ||
-      (isConcise && d.isSameDay(balance.x, firstOfCurrentMonth))
-  );
   
-  if (newBalanceCurrentMonth) {
-    
-    graphData.balances = graphData.balances.map((balance) => {
-      if (d.isSameDay(balance.x, endOfNextMonth) || 
-          (isConcise && d.isSameDay(balance.x, firstOfNextMonth))) {
-        // Se l'elemento è nell'intervallo, lo sostituiamo con newBalanceNextMonth
-        return { ...newBalanceNextMonth, x: balance.x };
-      } else if (d.isSameDay(balance.x, endOfCurrentMonth) ||
-          (isConcise && d.isSameDay(balance.x, firstOfCurrentMonth))) {
-        return { ...newBalanceCurrentMonth, x: balance.x };
-      } else if(!isConcise) { 
-        
-        // Troviamo l'elemento di domani in graphData.balances
-        const nextDayBalance = graphData.balances.find(
-          (balance) => d.isSameDay(balance.x, today)
-        );
+  // Applica la proiezione lineare per ogni giorno del mese
+  graphData.balances = graphData.balances.map((balance) => {
 
-        const amountDifference = newBalanceCurrentMonth.amount - nextDayBalance.amount;
-    
-        // Calcoliamo la differenza in giorni tra endOfCurrentMonth e tomorrow
-        const daysBetween = d.differenceInDays(endOfCurrentMonth, today);
-        const dailyIncrement = amountDifference / daysBetween;
-      
-        const amountDifferenceNextMonth = newBalanceNextMonth.amount - newBalanceCurrentMonth.amount;
-        
-        // Calcoliamo la differenza in giorni tra endOfNextMonth e endOfCurrentMonth
-        const daysBetweenNextMonth = d.differenceInDays(endOfNextMonth, endOfCurrentMonth);
-        const dailyIncrementNextMonth = amountDifferenceNextMonth / daysBetweenNextMonth;
-      
-        if (d.isAfter(balance.x, today) && d.isBefore(balance.x, endOfCurrentMonth)) {
-          const daysFromTomorrow = d.differenceInDays(balance.x, today);
-          
-          // Applichiamo la regressione lineare al campo amount
-          balance.amount = nextDayBalance.amount + round(dailyIncrement * daysFromTomorrow, 0);
-          balance.y = integerToAmount(balance.amount);
-        } else if (d.isAfter(balance.x, endOfCurrentMonth) && d.isBefore(balance.x, endOfNextMonth)) {
-          const daysFromTomorrow = d.differenceInDays(balance.x, endOfCurrentMonth);
-          
-          // Applichiamo la regressione lineare al campo amount
-          balance.amount = newBalanceCurrentMonth.amount + round(dailyIncrementNextMonth * daysFromTomorrow, 0);
-          balance.y = integerToAmount(balance.amount);
-        }
-      }
-      // Altrimenti, lasciamo l'elemento invariato
-      return balance;
-    });
-  }
+    const monthEnd = isConcise ? monthUtils.firstDayOfMonth(balance.x) : monthUtils.lastDayOfMonth(balance.x);
+    const previousMonth = isConcise ? getFirstDayOfPreviousMonth(balance.x) : getEndOfPreviousMonth(balance.x);
 
+    const dateMonthStart = monthUtils.parseDate(previousMonth);
+    const dateMonthEnd = monthUtils.parseDate(monthEnd);  
+
+    const newBalance = projectedBalances.find(
+      (balance) => d.isSameDay(balance.x, dateMonthEnd)
+    );
+
+    const previousMonthBalance = projectedBalances.find(
+      (balance) => d.isSameDay(balance.x, dateMonthStart)
+    );
+
+    if(previousMonthBalance && d.isSameDay(balance.x, dateMonthStart)){
+      return { ...previousMonthBalance, x: balance.x };
+    }else if(newBalance && d.isSameDay(balance.x, dateMonthEnd)){
+      return { ...newBalance, x: balance.x };
+    } else if (newBalance && previousMonthBalance && d.isAfter(balance.x, dateMonthStart) && d.isBefore(balance.x, dateMonthEnd)) {
+      // Calcola l'incremento giornaliero per il mese attuale
+      const daysInMonth = d.differenceInDays(dateMonthEnd, dateMonthStart);
+      const dailyIncrement = (newBalance.amount - previousMonthBalance.amount) / daysInMonth;
+      const daysFromStart = d.differenceInDays(balance.x, dateMonthStart);
+      balance.amount = previousMonthBalance.amount + round(dailyIncrement * daysFromStart, 0);
+      balance.y = integerToAmount(balance.amount);
+    }
+    return balance;
+  });
+      
   graphData.expenses = updateArray(graphData.expenses, projectedExpenses);
   graphData.income = updateArray(graphData.income, projectedIncome);
 

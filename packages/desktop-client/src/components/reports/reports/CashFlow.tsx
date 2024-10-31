@@ -122,7 +122,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         : monthUtils.currentMonth();
 
       const ddate = new Date();
-      ddate.setMonth(ddate.getMonth() + 1);
+      ddate.setMonth(ddate.getMonth() + 6);
 
       const allMonths = monthUtils
         .rangeInclusive(earliestMonth, d.format(ddate, 'yyyy-MM'))

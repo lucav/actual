@@ -118,6 +118,7 @@ export function FutureCashFlowGraph({
   const [yAxisIsHovered, setYAxisIsHovered] = useState(false);
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
@@ -125,14 +126,16 @@ export function FutureCashFlowGraph({
     income: d.isAfter(row.x, today) ? 0 : graphData.income[idx].y,
     balance: graphData.balances[idx].y,
     transfers: graphData.transfers[idx].y,
-    incomeForecast: d.isAfter(row.x, today) || d.isSameDay(row.x, today) ? graphData.income[idx].y : 0,
-    expensesForecast: d.isAfter(row.x, today) || d.isSameDay(row.x, today) ? row.y : 0,
+    expensesForecast: d.isAfter(row.x, today) ? row.y : 0,
+    incomeForecast: d.isAfter(row.x, today) ? graphData.income[idx].y : 0,
   }));
 
-  const pastData = data.filter(dt => !d.isAfter(new Date(dt.date), today));
+  const pastData = data.filter(dt => !d.isAfter(dt.date, today));
   const futureData = data.map(dt =>
-    d.isAfter(new Date(dt.date), today) || d.isSameDay(new Date(dt.date), today) || (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)) ) ? dt : { ...dt, balance: null }
+    (!d.isBefore(dt.date, today)) || (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)) ) ? dt : { ...dt, balance: null }
   );
+
+  //console.log(today, pastData, data);
 
   return (
     <Container style={style}>
