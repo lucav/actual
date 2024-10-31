@@ -205,7 +205,7 @@ export function futureCashFlowByDate(
         makeQuery().filter({ amount: { $lt: 0 } }),        
       ],
       data => {
-        setData(recalculate(data, start, fixedEnd, isConcise, realFixedEnd));        
+        setData(recalculate(data, start, fixedEnd, isConcise));        
       },
     );
   };
@@ -219,8 +219,7 @@ function recalculate(
   ],
   start: string,
   end: string,
-  isConcise: boolean,
-  realFixedEnd: string
+  isConcise: boolean
 ) {
   const [startingBalance, income, expense] = data;
   const convIncome = income.map(t => {
@@ -317,7 +316,7 @@ function recalculate(
     { expenses: [], income: [], transfers: [], balances: [] },
   );
 
-  const forecast = populateForecast(graphData, isConcise, realFixedEnd);
+  const forecast = populateForecast(graphData, isConcise);
 
   const { balances } = forecast;
 
@@ -372,7 +371,7 @@ function populateForecast(graphData:{
     premadeLabel: JSX.Element;
     amount: number;
   }>;
-}, isConcise: boolean, fixedEnd: string) {
+}, isConcise: boolean) {
 
   
   // Applica la proiezione lineare per ogni giorno del mese
