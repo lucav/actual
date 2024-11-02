@@ -159,13 +159,13 @@ export function futureCashFlowByDate(
   
       //console.log(futureMonth, futureEnd, realFixedEnd);
 
-      if(d.isAfter(monthUtils.parseDate(futureEnd), monthUtils.parseDate(realFixedEnd))){
+      const dateEnd = monthUtils.parseDate(futureEnd);
+      dateEnd.setHours(0, 0, 0, 0);
+
+      if(d.isAfter(dateEnd, monthUtils.parseDate(realFixedEnd))){
         //console.log("break");
         break;
       }
-
-      const dateEnd = monthUtils.parseDate(futureEnd);
-      dateEnd.setHours(0, 0, 0, 0);
 
       // Calcolo proiezione per ogni mese
       const sheetName = monthUtils.sheetForMonth(futureMonth);
@@ -373,6 +373,9 @@ function populateForecast(graphData:{
   }>;
 }, isConcise: boolean) {
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const actualMonth = monthUtils.parseDate(isConcise ? getFirstDayOfPreviousMonth(today) : getEndOfPreviousMonth(today));
   
   // Applica la proiezione lineare per ogni giorno del mese
   graphData.balances = graphData.balances.map((balance) => {
@@ -382,18 +385,22 @@ function populateForecast(graphData:{
 
     const dateMonthStart = monthUtils.parseDate(previousMonth);
     const dateMonthEnd = monthUtils.parseDate(monthEnd);  
+    dateMonthStart.setHours(0, 0, 0, 0);
+    dateMonthEnd.setHours(0, 0, 0, 0);
 
     const newBalance = projectedBalances.find(
       (balance) => d.isSameDay(balance.x, dateMonthEnd)
     );
 
-    const previousMonthBalance = projectedBalances.find(
+    const previousMonthBalance = d.isAfter(dateMonthStart, actualMonth) ? projectedBalances.find(
       (balance) => d.isSameDay(balance.x, dateMonthStart)
-    );
+    ) : balance;
 
-    if(previousMonthBalance && d.isSameDay(balance.x, dateMonthStart)){
-      return { ...previousMonthBalance, x: balance.x };
-    }else if(newBalance && d.isSameDay(balance.x, dateMonthEnd)){
+    //console.log(balance.x);
+    //console.log(dateMonthStart, dateMonthEnd, newBalance, previousMonthBalance);
+
+    if(newBalance && d.isSameDay(balance.x, dateMonthEnd)){
+      //console.log("newBalance && d.isSameDay(balance.x, dateMonthEnd)");
       return { ...newBalance, x: balance.x };
     } else if (newBalance && previousMonthBalance && d.isAfter(balance.x, dateMonthStart) && d.isBefore(balance.x, dateMonthEnd)) {
       // Calcola l'incremento giornaliero per il mese attuale
@@ -402,7 +409,10 @@ function populateForecast(graphData:{
       const daysFromStart = d.differenceInDays(balance.x, dateMonthStart);
       balance.amount = previousMonthBalance.amount + round(dailyIncrement * daysFromStart, 0);
       balance.y = integerToAmount(balance.amount);
+
+      //console.log(balance);
     }
+
     return balance;
   });
       
