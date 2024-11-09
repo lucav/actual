@@ -18,7 +18,6 @@ import {
 
 import { useFilters } from '../../../hooks/useFilters';
 import { useNavigate } from '../../../hooks/useNavigate';
-import { useResponsive } from '../../../ResponsiveProvider';
 import { theme } from '../../../style';
 import { AlignedText } from '../../common/AlignedText';
 import { Block } from '../../common/Block';
@@ -30,6 +29,7 @@ import { EditablePageHeaderTitle } from '../../EditablePageHeaderTitle';
 import { MobileBackButton } from '../../mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '../../Page';
 import { PrivacyFilter } from '../../PrivacyFilter';
+import { useResponsive } from '../../responsive/ResponsiveProvider';
 import { Change } from '../Change';
 import { CashFlowGraph } from '../graphs/CashFlowGraph';
 import { Header } from '../Header';
@@ -93,7 +93,9 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
   const [start, setStart] = useState(initialStart);
   const [end, setEnd] = useState(initialEnd);
   const [mode, setMode] = useState(initialMode);
-  const [showBalance, setShowBalance] = useState(true);
+  const [showBalance, setShowBalance] = useState(
+    widget?.meta?.showBalance ?? true,
+  );
   const today = new Date();
   const [isFutureCashFlow, setisFutureCashFlow] = useState(d.isAfter(new Date(end), today) ? true : false);
   const [forecastOffsetMonths, setForecastOffsetMonths] = useState(offset);
@@ -180,6 +182,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
           mode,
           forecastOffsetMonths
         },
+        showBalance,
       },
     });
     dispatch(
