@@ -6,7 +6,6 @@ import { ResponsiveContainer } from 'recharts';
 
 import { type CashFlowWidget } from 'loot-core/src/types/models';
 
-import { useFeatureFlag } from '../../../hooks/useFeatureFlag';
 import { View } from '../../common/View';
 import { Container } from '../Container';
 import { DateRange } from '../DateRange';
@@ -39,7 +38,6 @@ export function CashFlowCard({
   onMetaChange,
   onRemove,
 }: CashFlowCardProps) {
-  const isDashboardsFeatureEnabled = useFeatureFlag('dashboards');
   const { t } = useTranslation();
 
   const MIN_DETAILED_CHART_HEIGHT = 290;
@@ -119,11 +117,7 @@ export function CashFlowCard({
   return (
     <ReportCard
       isEditing={isEditing}
-      to={
-        isDashboardsFeatureEnabled
-          ? `/reports/cash-flow/${widgetId}`
-          : '/reports/cash-flow'
-      }
+      to={`/reports/cash-flow/${widgetId}`}
       menuItems={[
         {
           name: 'change-view',
