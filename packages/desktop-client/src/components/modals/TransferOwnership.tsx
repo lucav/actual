@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
 
-import { addNotification, closeAndLoadBudget } from 'loot-core/client/actions';
-import { type State } from 'loot-core/client/state-types';
+import {
+  addNotification,
+  closeAndLoadBudget,
+  popModal,
+} from 'loot-core/client/actions';
 import { send } from 'loot-core/platform/client/fetch';
 import { getUserAccessErrors } from 'loot-core/shared/errors';
 import { type Budget } from 'loot-core/types/budget';
 import { type RemoteFile, type SyncedLocalFile } from 'loot-core/types/file';
 import { type Handlers } from 'loot-core/types/handlers';
 
-import { useActions } from '../../hooks/useActions';
 import { useMetadataPref } from '../../hooks/useMetadataPref';
+import { useDispatch, useSelector } from '../../redux';
 import { styles, theme } from '../../style';
 import { Button } from '../common/Button2';
 import { Modal, ModalCloseButton, ModalHeader } from '../common/Modal';
@@ -30,8 +32,7 @@ export function TransferOwnership({
 }: TransferOwnershipProps) {
   const { t } = useTranslation();
 
-  const userData = useSelector((state: State) => state.user.data);
-  const actions = useActions();
+  const userData = useSelector(state => state.user.data);
   const [userId, setUserId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [availableUsers, setAvailableUsers] = useState<[string, string][]>([]);
@@ -50,14 +51,16 @@ export function TransferOwnership({
         if (!data) {
           setAvailableUsers([]);
         } else if ('error' in data) {
-          addNotification({
-            type: 'error',
-            title: t('Error getting users'),
-            message: t(
-              'Failed to complete ownership transfer. Please try again.',
-            ),
-            sticky: true,
-          });
+          dispatch(
+            addNotification({
+              type: 'error',
+              title: t('Error getting users'),
+              message: t(
+                'Failed to complete ownership transfer. Please try again.',
+              ),
+              sticky: true,
+            }),
+          );
         } else {
           setAvailableUsers(
             data
@@ -72,7 +75,7 @@ export function TransferOwnership({
         }
       },
     );
-  }, [userData?.userId, currentFile?.owner, t]);
+  }, [userData?.userId, currentFile?.owner, t, dispatch]);
 
   async function onSave() {
     if (cloudFileId) {
@@ -166,7 +169,10 @@ export function TransferOwnership({
             style={{ marginTop: 20 }}
           >
             {error && <Text style={{ color: theme.errorText }}>{error}</Text>}
-            <Button style={{ marginRight: 10 }} onPress={actions.popModal}>
+            <Button
+              style={{ marginRight: 10 }}
+              onPress={() => dispatch(popModal())}
+            >
               <Trans>Cancel</Trans>
             </Button>
 
@@ -184,14 +190,16 @@ export function TransferOwnership({
                   );
                   close();
                 } catch (error) {
-                  addNotification({
-                    type: 'error',
-                    title: t('Failed to transfer ownership'),
-                    message: t(
-                      'Failed to complete ownership transfer. Please try again.',
-                    ),
-                    sticky: true,
-                  });
+                  dispatch(
+                    addNotification({
+                      type: 'error',
+                      title: t('Failed to transfer ownership'),
+                      message: t(
+                        'Failed to complete ownership transfer. Please try again.',
+                      ),
+                      sticky: true,
+                    }),
+                  );
                   setIsTransferring(false);
                 }
               }}

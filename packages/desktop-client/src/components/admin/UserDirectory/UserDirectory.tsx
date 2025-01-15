@@ -9,8 +9,8 @@ import {
   type CSSProperties,
 } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
 
+import { addNotification, signOut } from 'loot-core/client/actions';
 import { pushModal } from 'loot-core/src/client/actions/modals';
 import { send } from 'loot-core/src/platform/client/fetch';
 import * as undo from 'loot-core/src/platform/client/undo';
@@ -19,8 +19,8 @@ import {
   type UserEntity,
 } from 'loot-core/types/models/user';
 
-import { useActions } from '../../../hooks/useActions';
 import { SelectedProvider, useSelected } from '../../../hooks/useSelected';
+import { useDispatch } from '../../../redux';
 import { theme } from '../../../style';
 import { Button } from '../../common/Button2';
 import { Link } from '../../common/Link';
@@ -46,7 +46,7 @@ function useGetUserDirectoryErrors() {
       case 'unauthorized':
         return t('You are not logged in.');
       case 'token-expired':
-        return t('Login expired, please login again.');
+        return t('Login expired, please log in again.');
       case 'user-cant-be-empty':
         return t(
           'Please enter a value for the username; the field cannot be empty.',
@@ -86,7 +86,6 @@ function UserDirectoryContent({
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
   const dispatch = useDispatch();
-  const actions = useActions();
 
   const { getUserDirectoryErrors } = useGetUserDirectoryErrors();
 
@@ -146,31 +145,42 @@ function UserDirectoryContent({
 
     if (error) {
       if (error === 'token-expired') {
-        actions.addNotification({
-          type: 'error',
-          id: 'login-expired',
-          title: t('Login expired'),
-          sticky: true,
-          message: getUserDirectoryErrors(error),
-          button: {
-            title: t('Go to login'),
-            action: () => actions.signOut(),
-          },
-        });
+        dispatch(
+          addNotification({
+            type: 'error',
+            id: 'login-expired',
+            title: t('Login expired'),
+            sticky: true,
+            message: getUserDirectoryErrors(error),
+            button: {
+              title: t('Go to login'),
+              action: () => dispatch(signOut()),
+            },
+          }),
+        );
       } else {
-        actions.addNotification({
-          type: 'error',
-          title: t('Something happened while deleting users'),
-          sticky: true,
-          message: getUserDirectoryErrors(error),
-        });
+        dispatch(
+          addNotification({
+            type: 'error',
+            title: t('Something happened while deleting users'),
+            sticky: true,
+            message: getUserDirectoryErrors(error),
+          }),
+        );
       }
     }
 
     await loadUsers();
     selectedInst.dispatch({ type: 'select-none' });
     setLoading(false);
-  }, [actions, loadUsers, selectedInst, setLoading, getUserDirectoryErrors, t]);
+  }, [
+    setLoading,
+    selectedInst,
+    loadUsers,
+    dispatch,
+    t,
+    getUserDirectoryErrors,
+  ]);
 
   const onEditUser = useCallback(
     user => {
@@ -232,15 +242,15 @@ function UserDirectoryContent({
             <Text>
               <Trans>
                 Manage and view users who can create new budgets or be invited
-                to access existing ones.{' '}
-                <Link
-                  variant="external"
-                  to="https://actualbudget.org/docs/budgeting/users/"
-                  linkColor="muted"
-                >
-                  Learn more
-                </Link>
-              </Trans>
+                to access existing ones.
+              </Trans>{' '}
+              <Link
+                variant="external"
+                to="https://actualbudget.org/docs/budgeting/users/"
+                linkColor="muted"
+              >
+                <Trans>Learn more</Trans>
+              </Link>
             </Text>
           </View>
           <View style={{ flex: 1 }} />
@@ -282,7 +292,7 @@ function UserDirectoryContent({
           <Stack direction="row" align="center" justify="flex-end" spacing={2}>
             {selectedInst.items.size > 0 && (
               <Button onPress={onDeleteSelected}>
-                <Trans> Delete {selectedInst.items.size} users </Trans>
+                <Trans>Delete {{ count: selectedInst.items.size }} users</Trans>
               </Button>
             )}
             <Button variant="primary" onPress={onAddUser}>

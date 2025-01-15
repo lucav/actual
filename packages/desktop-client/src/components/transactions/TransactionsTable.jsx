@@ -12,7 +12,6 @@ import React, {
 } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
 
 import { css } from '@emotion/css';
 import {
@@ -21,7 +20,7 @@ import {
   isValid as isDateValid,
 } from 'date-fns';
 
-import { pushModal } from 'loot-core/client/actions';
+import { addNotification, pushModal } from 'loot-core/client/actions';
 import { useCachedSchedules } from 'loot-core/src/client/data-hooks/schedules';
 import {
   getAccountsById,
@@ -60,6 +59,7 @@ import {
   SvgCalendar,
   SvgHyperlink2,
 } from '../../icons/v2';
+import { useDispatch } from '../../redux';
 import { styles, theme } from '../../style';
 import { AccountAutocomplete } from '../autocomplete/AccountAutocomplete';
 import { CategoryAutocomplete } from '../autocomplete/CategoryAutocomplete';
@@ -2105,6 +2105,7 @@ function TransactionTableInner({
 }
 
 export const TransactionTable = forwardRef((props, ref) => {
+  const dispatch = useDispatch();
   const [newTransactions, setNewTransactions] = useState(null);
   const [prevIsAdding, setPrevIsAdding] = useState(false);
   const splitsExpanded = useSplitsExpanded();
@@ -2237,10 +2238,12 @@ export const TransactionTable = forwardRef((props, ref) => {
   useEffect(() => {
     if (shouldAdd.current) {
       if (newTransactions[0].account == null) {
-        props.addNotification({
-          type: 'error',
-          message: 'Account is a required field',
-        });
+        dispatch(
+          addNotification({
+            type: 'error',
+            message: 'Account is a required field',
+          }),
+        );
         newNavigator.onEdit('temp', 'account');
       } else {
         const transactions = latestState.current.newTransactions;

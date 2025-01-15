@@ -9,27 +9,27 @@ import {
 } from 'react-error-boundary';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
 import {
+  addNotification,
   closeBudget,
   loadBudget,
   loadGlobalPrefs,
   setAppState,
+  signOut,
   sync,
 } from 'loot-core/client/actions';
 import { SpreadsheetProvider } from 'loot-core/client/SpreadsheetProvider';
-import { type State } from 'loot-core/client/state-types';
 import * as Platform from 'loot-core/src/client/platform';
 import {
   init as initConnection,
   send,
 } from 'loot-core/src/platform/client/fetch';
 
-import { useActions } from '../hooks/useActions';
 import { useMetadataPref } from '../hooks/useMetadataPref';
 import { installPolyfills } from '../polyfills';
+import { useDispatch, useSelector } from '../redux';
 import { styles, hasHiddenScrollbars, ThemeStyle, useTheme } from '../style';
 import { ExposeNavigate } from '../util/router-tools';
 
@@ -51,8 +51,7 @@ function AppInner() {
   const { t } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
-  const userData = useSelector((state: State) => state.user.data);
-  const { signOut, addNotification } = useActions();
+  const userData = useSelector(state => state.user.data);
 
   const maybeUpdate = async <T,>(cb?: () => T): Promise<T> => {
     if (global.Actual.isUpdateReadyForDownload()) {
@@ -129,17 +128,19 @@ function AppInner() {
 
   useEffect(() => {
     if (userData?.tokenExpired) {
-      addNotification({
-        type: 'error',
-        id: 'login-expired',
-        title: t('Login expired'),
-        sticky: true,
-        message: t('Login expired, please login again.'),
-        button: {
-          title: t('Go to login'),
-          action: signOut,
-        },
-      });
+      dispatch(
+        addNotification({
+          type: 'error',
+          id: 'login-expired',
+          title: t('Login expired'),
+          sticky: true,
+          message: t('Login expired, please login again.'),
+          button: {
+            title: t('Go to login'),
+            action: () => dispatch(signOut()),
+          },
+        }),
+      );
     }
   }, [userData, userData?.tokenExpired]);
 
