@@ -78,12 +78,12 @@ export function recalculateSplit(trans: TransactionEntity) {
     (acc, t) => acc + num(t.amount),
     0,
   );
+
+  const { error, ...rest } = trans;
   return {
-    ...trans,
+    ...rest,
     error:
-      total === num(trans.amount)
-        ? undefined
-        : SplitTransactionError(total, trans),
+      total === num(trans.amount) ? null : SplitTransactionError(total, trans),
   } satisfies TransactionEntity;
 }
 
@@ -276,11 +276,10 @@ export function deleteTransaction(
       if (trans.id === id) {
         return null;
       } else if (trans.subtransactions?.length === 1) {
+        const { error, subtransactions, ...rest } = trans;
         return {
-          ...trans,
-          subtransactions: undefined,
+          ...rest,
           is_parent: false,
-          error: undefined,
         } satisfies TransactionEntity;
       } else {
         const sub = trans.subtransactions?.filter(t => t.id !== id);
@@ -308,11 +307,12 @@ export function splitTransaction(
       makeChild(trans),
     ];
 
+    const { error, ...rest } = trans;
+
     return {
-      ...trans,
+      ...rest,
       is_parent: true,
-      error:
-        num(trans.amount) === 0 ? undefined : SplitTransactionError(0, trans),
+      error: num(trans.amount) === 0 ? null : SplitTransactionError(0, trans),
       subtransactions: subtransactions.map(t => ({
         ...t,
         sort_order: t.sort_order || -1,

@@ -10,9 +10,9 @@ import React, {
 import { useTranslation } from 'react-i18next';
 
 import { useSchedules } from 'loot-core/client/data-hooks/schedules';
+import { initiallyLoadPayees } from 'loot-core/client/queries/queriesSlice';
 import { q } from 'loot-core/shared/query';
 import { pushModal } from 'loot-core/src/client/actions/modals';
-import { initiallyLoadPayees } from 'loot-core/src/client/actions/queries';
 import { send } from 'loot-core/src/platform/client/fetch';
 import * as undo from 'loot-core/src/platform/client/undo';
 import { getNormalisedString } from 'loot-core/src/shared/normalisation';
@@ -131,18 +131,22 @@ export function ManageRules({
     [payees, accounts, schedules, categories],
   );
 
-  const filteredRules = useMemo(
-    () =>
-      (filter === ''
-        ? allRules
-        : allRules.filter(rule =>
+  const filteredRules = useMemo(() => {
+    const rules = allRules.filter(rule => {
+      const schedule = schedules.find(schedule => schedule.rule === rule.id);
+      return schedule ? schedule.completed === false : true;
+    });
+
+    return (
+      filter === ''
+        ? rules
+        : rules.filter(rule =>
             getNormalisedString(ruleToString(rule, filterData)).includes(
               getNormalisedString(filter),
             ),
           )
-      ).slice(0, 100 + page * 50),
-    [allRules, filter, filterData, page],
-  );
+    ).slice(0, 100 + page * 50);
+  }, [allRules, filter, filterData, page]);
   const selectedInst = useSelected('manage-rules', allRules, []);
   const [hoveredRule, setHoveredRule] = useState(null);
 

@@ -17,6 +17,7 @@ import {
 
 import { useFilters } from '../../../hooks/useFilters';
 import { useNavigate } from '../../../hooks/useNavigate';
+import { useSyncedPref } from '../../../hooks/useSyncedPref';
 import { useDispatch } from '../../../redux';
 import { theme } from '../../../style';
 import { AlignedText } from '../../common/AlignedText';
@@ -209,6 +210,10 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     });
   };
 
+  const [earliestTransaction, _] = useState('');
+  const [_firstDayOfWeekIdx] = useSyncedPref('firstDayOfWeekIdx');
+  const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
+
   if (!allMonths || !data) {
     return null;
   }
@@ -246,6 +251,8 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         allMonths={allMonths}
         start={start}
         end={end}
+        earliestTransaction={earliestTransaction}
+        firstDayOfWeekIdx={firstDayOfWeekIdx}
         mode={mode}
         show1Month
         onChangeDates={onChangeDates}
@@ -286,7 +293,11 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         >
           <AlignedText
             style={{ marginBottom: 5, minWidth: 160 }}
-            left={<Block>Income:</Block>}
+            left={
+              <Block>
+                <Trans>Income:</Trans>
+              </Block>
+            }
             right={
               <Text style={{ fontWeight: 600 }}>
                 <PrivacyFilter>{integerToCurrency(totalIncome)}</PrivacyFilter>
