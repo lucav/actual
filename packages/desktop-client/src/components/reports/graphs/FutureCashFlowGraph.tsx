@@ -120,12 +120,15 @@ export function FutureCashFlowGraph({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  //console.log("graphData.expenses => ", graphData.expenses);
+  //console.log("graphData.balances => ", graphData.balances);
+
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
     expenses: d.isAfter(row.x, today) ? 0 : row.y,
     income: d.isAfter(row.x, today) ? 0 : graphData.income[idx].y,
     balance: graphData.balances[idx].y,
-    transfers: graphData.transfers[idx].y,
+    transfers: graphData.transfers[idx] ? graphData.transfers[idx].y : 0,
     expensesForecast: d.isAfter(row.x, today) ? row.y : 0,
     incomeForecast: d.isAfter(row.x, today) ? graphData.income[idx].y : 0,
   }));

@@ -242,6 +242,8 @@ function recalculate(
   let totalIncome = 0;
   let totalTransfers = 0;
 
+  //console.log("dates => ", dates);
+
   const graphData = dates.reduce<{
     expenses: Array<{ x: Date; y: number }>;
     income: Array<{ x: Date; y: number }>;
@@ -316,7 +318,11 @@ function recalculate(
     { expenses: [], income: [], transfers: [], balances: [] },
   );
 
+  //console.log("graphData prima =>",graphData);
+
   const forecast = populateForecast(graphData, isConcise);
+
+  //console.log("graphData dopo =>",forecast);
 
   const { balances } = forecast;
 
@@ -341,9 +347,30 @@ function getFirstDayOfMonth(date: Date): Date {
 }
 
 function updateArray(
-  originalArray: Array<{ x: Date; y: number }>,
-  newData: Array<{ x: Date; y: number }>
-): Array<{ x: Date; y: number }> {
+  originalArray: Array<{ x: Date; y: number; }>,
+  newData: Array<{ x: Date; y: number; }>
+): Array<{ x: Date; y: number; }> {
+  newData.map((newItem) => {
+    const index = originalArray.findIndex(
+      (item) => d.isSameDay(item.x, newItem.x)
+    );
+    if (index !== -1) {
+      // Sostituiamo l'elemento esistente
+      originalArray[index] = newItem;
+    } else {
+      // Aggiungiamo il nuovo elemento
+      originalArray.push(newItem);
+    }
+    return newItem;
+  });
+
+  return originalArray;
+}
+
+function updateArrayBalance(
+  originalArray: Array<{ x: Date; y: number; premadeLabel: JSX.Element; amount: number }>,
+  newData: Array<{ x: Date; y: number; premadeLabel: JSX.Element; amount: number }>
+): Array<{ x: Date; y: number; premadeLabel: JSX.Element; amount: number }> {
   newData.map((newItem) => {
     const index = originalArray.findIndex(
       (item) => d.isSameDay(item.x, newItem.x)
@@ -416,6 +443,7 @@ function populateForecast(graphData:{
     return balance;
   });
       
+  graphData.balances = updateArrayBalance(graphData.balances, projectedBalances);
   graphData.expenses = updateArray(graphData.expenses, projectedExpenses);
   graphData.income = updateArray(graphData.income, projectedIncome);
 
