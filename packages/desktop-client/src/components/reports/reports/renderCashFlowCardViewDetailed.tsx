@@ -2,14 +2,14 @@
 import React from 'react';
 import { Trans } from 'react-i18next';
 
-import { Block } from '../../common/Block';
+import { Block } from '@actual-app/components/block';
 
 import { integerToCurrency } from 'loot-core/shared/util';
 
-import { theme } from '../../../style';
-import { AlignedText } from '../../common/AlignedText';
-import { Text } from '../../common/Text';
-import { View } from '../../common/View';
+import { theme } from '@actual-app/components/theme';
+import { AlignedText } from '@actual-app/components/aligned-text';
+import { Text } from '@actual-app/components/text';
+import { View } from '@actual-app/components/view';
 import { PrivacyFilter } from '../../PrivacyFilter';
 import { Change } from '../Change';
 

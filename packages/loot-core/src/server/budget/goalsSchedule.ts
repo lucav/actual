@@ -21,19 +21,26 @@ async function createScheduleList(
   const errors = [];
 
   for (let ll = 0; ll < template.length; ll++) {
-    const { id: sid, completed: complete } = await db.first(
-      'SELECT * FROM schedules WHERE TRIM(name) = ? AND tombstone = 0',
+    const { id: sid, completed: complete } = await db.first<
+      Pick<db.DbSchedule, 'id' | 'completed'>
+    >(
+      'SELECT id, completed FROM schedules WHERE TRIM(name) = ? AND tombstone = 0',
       [template[ll].name.trim()],
     );
     const rule = await getRuleForSchedule(sid);
     const conditions = rule.serialize().conditions;
     const { date: dateConditions, amount: amountCondition } =
       extractScheduleConds(conditions);
-    const scheduleAmount =
+    let scheduleAmount =
       amountCondition.op === 'isbetween'
         ? Math.round(amountCondition.value.num1 + amountCondition.value.num2) /
           2
         : amountCondition.value;
+    // Apply adjustment percentage if specified
+    if (template[ll].adjustment) {
+      const adjustmentFactor = 1 + template[ll].adjustment / 100;
+      scheduleAmount = Math.round(scheduleAmount * adjustmentFactor);
+    }
     const { amount: postRuleAmount, subtransactions } = rule.execActions({
       amount: scheduleAmount,
       category: category.id,

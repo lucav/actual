@@ -7,9 +7,10 @@ import { Bar, BarChart, LabelList } from 'recharts';
 import { integerToCurrency } from 'loot-core/src/shared/util';
 
 import { SvgExclamationSolid } from '../../../icons/v1';
-import { styles, theme } from '../../../style';
-import { Tooltip } from '../../common/Tooltip';
-import { View } from '../../common/View';
+import { styles } from '@actual-app/components/styles';
+import { theme } from '@actual-app/components/theme';
+import { Tooltip } from '@actual-app/components/tooltip';
+import { View } from '@actual-app/components/view';
 import { PrivacyFilter } from '../../PrivacyFilter';
 import { chartTheme } from '../chart-theme';
 

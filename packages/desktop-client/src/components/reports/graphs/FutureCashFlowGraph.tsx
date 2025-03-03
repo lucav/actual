@@ -23,8 +23,8 @@ import {
 } from 'loot-core/src/shared/util';
 
 import { usePrivacyMode } from '../../../hooks/usePrivacyMode';
-import { theme } from '../../../style';
-import { AlignedText } from '../../common/AlignedText';
+import { AlignedText } from '@actual-app/components/aligned-text';
+import { theme } from '@actual-app/components/theme';
 import { chartTheme } from '../chart-theme';
 import { Container } from '../Container';
 import { firstDayOfMonth } from 'loot-core/shared/months';

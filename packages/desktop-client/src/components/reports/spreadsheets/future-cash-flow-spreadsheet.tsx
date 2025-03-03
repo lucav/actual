@@ -9,7 +9,7 @@ import { q } from 'loot-core/src/shared/query';
 import { integerToCurrency, integerToAmount, toRelaxedNumber, getNumberFormat } from 'loot-core/src/shared/util';
 import { type RuleConditionEntity } from 'loot-core/types/models';
 
-import { AlignedText } from '../../common/AlignedText';
+import { AlignedText } from '@actual-app/components/aligned-text';
 import { runAll, indexCashFlow } from '../util';
 import { round } from 'lodash';
 

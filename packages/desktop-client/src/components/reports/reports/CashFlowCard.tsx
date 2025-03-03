@@ -2,11 +2,12 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import * as d from 'date-fns';
+import { View } from '@actual-app/components/view';
 import { ResponsiveContainer } from 'recharts';
 
-import { type CashFlowWidget } from 'loot-core/src/types/models';
+import { integerToCurrency } from 'loot-core/shared/util';
+import { type CashFlowWidget } from 'loot-core/types/models';
 
-import { View } from '../../common/View';
 import { Container } from '../Container';
 import { DateRange } from '../DateRange';
 import { LoadingIndicator } from '../LoadingIndicator';

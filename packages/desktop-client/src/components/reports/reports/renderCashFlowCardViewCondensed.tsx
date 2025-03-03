@@ -1,7 +1,7 @@
 // @ts-strict-ignore
 import React from 'react';
 
-import { View } from '../../common/View';
+import { View } from '@actual-app/components/view';
 import { PrivacyFilter } from '../../PrivacyFilter';
 import { Change } from '../Change';
 

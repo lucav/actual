@@ -1,4 +1,4 @@
-import { type Query } from 'loot-core/src/shared/query';
+import { type Query } from 'loot-core/shared/query';
 
 export type Spreadsheets = {
   account: {
@@ -89,6 +89,15 @@ export type SheetNames = keyof Spreadsheets & string;
 export type SheetFields<SheetName extends SheetNames> =
   keyof Spreadsheets[SheetName] & string;
 
+export type BindingObject<
+  SheetName extends SheetNames,
+  SheetFieldName extends SheetFields<SheetName>,
+> = {
+  name: SheetFieldName;
+  value?: Spreadsheets[SheetName][SheetFieldName] | undefined;
+  query?: Query | undefined;
+};
+
 export type Binding<
   SheetName extends SheetNames,
   SheetFieldName extends SheetFields<SheetName>,
@@ -96,8 +105,8 @@ export type Binding<
   | SheetFieldName
   | {
       name: SheetFieldName;
-      value?: Spreadsheets[SheetName][SheetFieldName];
-      query?: Query;
+      value?: Spreadsheets[SheetName][SheetFieldName] | undefined;
+      query?: Query | undefined;
     };
 export const parametrizedField =
   <SheetName extends SheetNames>() =>
