@@ -3,10 +3,15 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
 import { Paragraph } from '@actual-app/components/paragraph';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { pushModal } from 'loot-core/client/actions/modals';
+import {
+  type Modal as ModalType,
+  pushModal,
+} from 'loot-core/client/modals/modalsSlice';
 import { sendCatch } from 'loot-core/platform/client/fetch';
 import {
   type GoCardlessInstitution,
@@ -14,9 +19,7 @@ import {
 } from 'loot-core/types/models';
 
 import { useGoCardlessStatus } from '../../hooks/useGoCardlessStatus';
-import { AnimatedLoading } from '../../icons/AnimatedLoading';
 import { useDispatch } from '../../redux';
-import { theme } from '../../style';
 import { Error, Warning } from '../alerts';
 import { Autocomplete } from '../autocomplete/Autocomplete';
 import { Link } from '../common/Link';
@@ -73,19 +76,16 @@ function renderError(error: 'unknown' | 'timeout', t: (key: string) => string) {
   );
 }
 
-type GoCardlessExternalMsgProps = {
-  onMoveExternal: (arg: {
-    institutionId: string;
-  }) => Promise<{ error?: 'unknown' | 'timeout'; data?: GoCardlessToken }>;
-  onSuccess: (data: GoCardlessToken) => Promise<void>;
-  onClose: () => void;
-};
+type GoCardlessExternalMsgModalProps = Extract<
+  ModalType,
+  { name: 'gocardless-external-msg' }
+>['options'];
 
 export function GoCardlessExternalMsgModal({
   onMoveExternal,
   onSuccess,
   onClose,
-}: GoCardlessExternalMsgProps) {
+}: GoCardlessExternalMsgModalProps) {
   const { t } = useTranslation();
 
   const dispatch = useDispatch();
@@ -115,7 +115,7 @@ export function GoCardlessExternalMsgModal({
     setWaiting('browser');
 
     const res = await onMoveExternal({ institutionId });
-    if (res.error) {
+    if ('error' in res) {
       setError(res.error);
       setWaiting(null);
       return;
@@ -134,8 +134,13 @@ export function GoCardlessExternalMsgModal({
 
   const onGoCardlessInit = () => {
     dispatch(
-      pushModal('gocardless-init', {
-        onSuccess: () => setIsGoCardlessSetupComplete(true),
+      pushModal({
+        modal: {
+          name: 'gocardless-init',
+          options: {
+            onSuccess: () => setIsGoCardlessSetupComplete(true),
+          },
+        },
       }),
     );
   };

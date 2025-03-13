@@ -2,35 +2,28 @@ import React, { memo } from 'react';
 import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { theme } from '@actual-app/components/theme';
 
-import { format } from 'loot-core/src/shared/months';
-import { type AccountEntity } from 'loot-core/src/types/models';
+import { tsToRelativeTime } from 'loot-core/shared/util';
+import { type AccountEntity } from 'loot-core/types/models';
 
-import { useDateFormat } from '../../hooks/useDateFormat';
-import { theme } from '../../style';
 import { Row, Cell } from '../table';
-
-const tsToString = (ts: string | null, dateFormat: string) => {
-  if (!ts) return 'Unknown';
-
-  const parsed = new Date(parseInt(ts, 10));
-  return `${format(parsed, dateFormat)} ${format(parsed, 'HH:mm:ss')}`;
-};
 
 type AccountRowProps = {
   account: AccountEntity;
   hovered: boolean;
   onHover: (id: AccountEntity['id'] | null) => void;
   onAction: (account: AccountEntity, action: 'link' | 'edit') => void;
+  locale: Locale;
 };
 
 export const AccountRow = memo(
-  ({ account, hovered, onHover, onAction }: AccountRowProps) => {
+  ({ account, hovered, onHover, onAction, locale }: AccountRowProps) => {
     const backgroundFocus = hovered;
 
-    const dateFormat = useDateFormat() || 'MM/dd/yyyy';
-
-    const lastSync = tsToString(account.last_sync, dateFormat);
+    const lastSync = tsToRelativeTime(account.last_sync, locale, {
+      capitalize: true,
+    });
 
     return (
       <Row

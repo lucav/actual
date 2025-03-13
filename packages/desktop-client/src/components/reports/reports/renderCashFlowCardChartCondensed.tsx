@@ -6,7 +6,7 @@ import { Bar, BarChart, LabelList } from 'recharts';
 
 import { integerToCurrency } from 'loot-core/src/shared/util';
 
-import { SvgExclamationSolid } from '../../../icons/v1';
+import { SvgExclamationSolid } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';

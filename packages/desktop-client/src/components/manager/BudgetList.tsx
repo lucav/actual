@@ -8,14 +8,32 @@ import React, {
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
+import { AnimatedLoading } from '@actual-app/components/icons/AnimatedLoading';
+import {
+  SvgCloudCheck,
+  SvgCloudDownload,
+  SvgCog,
+  SvgDotsHorizontalTriple,
+  SvgFileDouble,
+  SvgUser,
+  SvgUserGroup,
+} from '@actual-app/components/icons/v1';
+import {
+  SvgCloudUnknown,
+  SvgKey,
+  SvgRefreshArrow,
+} from '@actual-app/components/icons/v2';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
+import { tokens } from '@actual-app/components/tokens';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 
-import { getUserData, pushModal } from 'loot-core/client/actions';
+import { getUserData } from 'loot-core/client/actions';
 import {
   closeAndDownloadBudget,
   closeAndLoadBudget,
@@ -24,6 +42,7 @@ import {
   loadAllFiles,
   loadBudget,
 } from 'loot-core/client/budgets/budgetsSlice';
+import { pushModal } from 'loot-core/client/modals/modalsSlice';
 import {
   isElectron,
   isNonProductionEnvironment,
@@ -38,21 +57,7 @@ import {
 
 import { useInitialMount } from '../../hooks/useInitialMount';
 import { useMetadataPref } from '../../hooks/useMetadataPref';
-import { AnimatedLoading } from '../../icons/AnimatedLoading';
-import {
-  SvgCloudCheck,
-  SvgCloudDownload,
-  SvgCog,
-  SvgDotsHorizontalTriple,
-  SvgFileDouble,
-  SvgUser,
-  SvgUserGroup,
-} from '../../icons/v1';
-import { SvgCloudUnknown, SvgKey, SvgRefreshArrow } from '../../icons/v2';
 import { useSelector, useDispatch } from '../../redux';
-import { theme } from '../../style';
-import { tokens } from '../../tokens';
-import { useResponsive } from '../responsive/ResponsiveProvider';
 import { useMultiuserEnabled } from '../ServerContext';
 
 function getFileDescription(file: File, t: (key: string) => string) {
@@ -527,8 +532,10 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
     return file.state !== 'remote';
   }
 
-  const nonRemoteFiles = allFiles.filter(isNonRemoteFile);
-  const files = id ? nonRemoteFiles.filter(f => f.id !== id) : allFiles;
+  // Filter out the open file
+  const files = id
+    ? allFiles.filter(file => !isNonRemoteFile(file) || file.id !== id)
+    : allFiles;
 
   const [creating, setCreating] = useState(false);
   const { isNarrowWidth } = useResponsive();
@@ -591,7 +598,9 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
         <BudgetListHeader
           quickSwitchMode={quickSwitchMode}
           onRefresh={refresh}
-          onOpenSettings={() => dispatch(pushModal('files-settings'))}
+          onOpenSettings={() =>
+            dispatch(pushModal({ modal: { name: 'files-settings' } }))
+          }
         />
       )}
       <BudgetFiles
@@ -600,11 +609,20 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
         quickSwitchMode={quickSwitchMode}
         onSelect={onSelect}
         onDelete={(file: File) =>
-          dispatch(pushModal('delete-budget', { file }))
+          dispatch(
+            pushModal({ modal: { name: 'delete-budget', options: { file } } }),
+          )
         }
         onDuplicate={(file: File) => {
           if (file && 'id' in file) {
-            dispatch(pushModal('duplicate-budget', { file, managePage: true }));
+            dispatch(
+              pushModal({
+                modal: {
+                  name: 'duplicate-budget',
+                  options: { file, managePage: true },
+                },
+              }),
+            );
           } else {
             console.error(
               'Attempted to duplicate a cloud file - only local files are supported. Cloud file:',
@@ -630,7 +648,7 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
               color: theme.pageTextLight,
             }}
             onPress={() => {
-              dispatch(pushModal('import'));
+              dispatch(pushModal({ modal: { name: 'import' } }));
             }}
           >
             <Trans>Import file</Trans>

@@ -1,20 +1,16 @@
-import React, {
-  useState,
-  type ComponentPropsWithoutRef,
-  useEffect,
-  type CSSProperties,
-} from 'react';
+import React, { useState, useEffect, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import { type Modal as ModalType } from 'loot-core/client/modals/modalsSlice';
 import { envelopeBudget } from 'loot-core/client/queries';
 import { amountToInteger, integerToAmount } from 'loot-core/shared/util';
 
 import { useCategory } from '../../hooks/useCategory';
-import { theme } from '../../style';
 import { BudgetMenu } from '../budget/envelope/BudgetMenu';
 import { useEnvelopeSheetValue } from '../budget/envelope/EnvelopeBudgetComponents';
 import {
@@ -25,12 +21,10 @@ import {
 } from '../common/Modal';
 import { FocusableAmountInput } from '../mobile/transactions/FocusableAmountInput';
 
-type EnvelopeBudgetMenuModalProps = ComponentPropsWithoutRef<
-  typeof BudgetMenu
-> & {
-  categoryId: string;
-  onUpdateBudget: (amount: number) => void;
-};
+type EnvelopeBudgetMenuModalProps = Omit<
+  Extract<ModalType, { name: 'envelope-budget-menu' }>['options'],
+  'month'
+>;
 
 export function EnvelopeBudgetMenuModal({
   categoryId,

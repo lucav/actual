@@ -1,6 +1,8 @@
 import React, { useRef, useCallback, useLayoutEffect } from 'react';
 
-import { pushModal } from 'loot-core/client/actions';
+import { theme } from '@actual-app/components/theme';
+
+import { pushModal } from 'loot-core/client/modals/modalsSlice';
 import { send } from 'loot-core/platform/client/fetch';
 import {
   splitTransaction,
@@ -14,7 +16,6 @@ import { getChangedValues, applyChanges } from 'loot-core/shared/util';
 import { useNavigate } from '../../hooks/useNavigate';
 import { useSyncedPref } from '../../hooks/useSyncedPref';
 import { useDispatch } from '../../redux';
-import { theme } from '../../style';
 
 import { TransactionTable } from './TransactionsTable';
 
@@ -234,7 +235,11 @@ export function TransactionList({
 
   const onNavigateToSchedule = useCallback(
     scheduleId => {
-      dispatch(pushModal('schedule-edit', { id: scheduleId }));
+      dispatch(
+        pushModal({
+          modal: { name: 'schedule-edit', options: { id: scheduleId } },
+        }),
+      );
     },
     [dispatch],
   );

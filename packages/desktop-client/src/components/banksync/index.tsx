@@ -1,10 +1,11 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
-import { pushModal } from 'loot-core/src/client/actions/modals';
+import { pushModal } from 'loot-core/client/modals/modalsSlice';
 import {
   type BankSyncProviders,
   type AccountEntity,
@@ -15,7 +16,6 @@ import { useGlobalPref } from '../../hooks/useGlobalPref';
 import { useDispatch } from '../../redux';
 import { MOBILE_NAV_HEIGHT } from '../mobile/MobileNavTabs';
 import { Page } from '../Page';
-import { useResponsive } from '../responsive/ResponsiveProvider';
 
 import { AccountsHeader } from './AccountsHeader';
 import { AccountsList } from './AccountsList';
@@ -28,6 +28,7 @@ const useSyncSourceReadable = () => {
   const syncSourceReadable: Record<SyncProviders, string> = {
     goCardless: 'GoCardless',
     simpleFin: 'SimpleFIN',
+    pluggyai: 'Pluggy.ai',
     unlinked: t('Unlinked'),
   };
 
@@ -80,13 +81,25 @@ export function BankSync() {
     switch (action) {
       case 'edit':
         dispatch(
-          pushModal('synced-account-edit', {
-            account,
+          pushModal({
+            modal: {
+              name: 'synced-account-edit',
+              options: {
+                account,
+              },
+            },
           }),
         );
         break;
       case 'link':
-        dispatch(pushModal('add-account', { upgradingAccountId: account.id }));
+        dispatch(
+          pushModal({
+            modal: {
+              name: 'add-account',
+              options: { upgradingAccountId: account.id },
+            },
+          }),
+        );
         break;
       default:
         break;

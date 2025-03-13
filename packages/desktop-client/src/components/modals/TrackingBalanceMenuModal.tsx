@@ -1,17 +1,15 @@
-import React, {
-  type ComponentPropsWithoutRef,
-  type CSSProperties,
-} from 'react';
+import React, { type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import { type Modal as ModalType } from 'loot-core/client/modals/modalsSlice';
 import { trackingBudget } from 'loot-core/client/queries';
 
 import { useCategory } from '../../hooks/useCategory';
-import { theme } from '../../style';
 import {
   BalanceWithCarryover,
   CarryoverIndicator,
@@ -25,8 +23,9 @@ import {
 } from '../common/Modal';
 import { CellValueText } from '../spreadsheet/CellValue';
 
-type TrackingBalanceMenuModalProps = ComponentPropsWithoutRef<
-  typeof BalanceMenu
+type TrackingBalanceMenuModalProps = Omit<
+  Extract<ModalType, { name: 'tracking-balance-menu' }>['options'],
+  'month'
 >;
 
 export function TrackingBalanceMenuModal({

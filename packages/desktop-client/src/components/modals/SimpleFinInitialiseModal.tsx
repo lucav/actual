@@ -3,14 +3,15 @@ import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 
 import { ButtonWithLoading } from '@actual-app/components/button';
+import { Input } from '@actual-app/components/input';
 import { Text } from '@actual-app/components/text';
 import { View } from '@actual-app/components/view';
 
+import { type Modal as ModalType } from 'loot-core/client/modals/modalsSlice';
 import { send } from 'loot-core/platform/client/fetch';
 import { getSecretsError } from 'loot-core/shared/errors';
 
 import { Error } from '../alerts';
-import { Input } from '../common/Input';
 import { Link } from '../common/Link';
 import {
   Modal,
@@ -20,13 +21,14 @@ import {
 } from '../common/Modal';
 import { FormField, FormLabel } from '../forms';
 
-type SimpleFinInitialiseProps = {
-  onSuccess: () => void;
-};
+type SimpleFinInitialiseModalProps = Extract<
+  ModalType,
+  { name: 'simplefin-init' }
+>['options'];
 
 export const SimpleFinInitialiseModal = ({
   onSuccess,
-}: SimpleFinInitialiseProps) => {
+}: SimpleFinInitialiseModalProps) => {
   const { t } = useTranslation();
   const [token, setToken] = useState('');
   const [isValid, setIsValid] = useState(true);

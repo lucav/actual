@@ -13,9 +13,25 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import {
+  SvgLeftArrow2,
+  SvgRightArrow2,
+  SvgSplit,
+} from '@actual-app/components/icons/v0';
+import {
+  SvgArrowDown,
+  SvgArrowUp,
+  SvgCheveronDown,
+} from '@actual-app/components/icons/v1';
+import {
+  SvgArrowsSynchronize,
+  SvgCalendar3,
+  SvgHyperlink2,
+} from '@actual-app/components/icons/v2';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
@@ -25,8 +41,9 @@ import {
   isValid as isDateValid,
 } from 'date-fns';
 
-import { addNotification, pushModal } from 'loot-core/client/actions';
 import { useCachedSchedules } from 'loot-core/client/data-hooks/schedules';
+import { pushModal } from 'loot-core/client/modals/modalsSlice';
+import { addNotification } from 'loot-core/client/notifications/notificationsSlice';
 import {
   getAccountsById,
   getPayeesById,
@@ -58,15 +75,7 @@ import { usePrevious } from '../../hooks/usePrevious';
 import { useProperFocus } from '../../hooks/useProperFocus';
 import { useSelectedDispatch, useSelectedItems } from '../../hooks/useSelected';
 import { useSplitsExpanded } from '../../hooks/useSplitsExpanded';
-import { SvgLeftArrow2, SvgRightArrow2, SvgSplit } from '../../icons/v0';
-import { SvgArrowDown, SvgArrowUp, SvgCheveronDown } from '../../icons/v1';
-import {
-  SvgArrowsSynchronize,
-  SvgCalendar3,
-  SvgHyperlink2,
-} from '../../icons/v2';
 import { useDispatch } from '../../redux';
-import { theme } from '../../style';
 import { AccountAutocomplete } from '../autocomplete/AccountAutocomplete';
 import { CategoryAutocomplete } from '../autocomplete/CategoryAutocomplete';
 import { PayeeAutocomplete } from '../autocomplete/PayeeAutocomplete';
@@ -521,9 +530,14 @@ function PayeeCell({
         disabled={isPreview}
         onSelect={() =>
           dispatch(
-            pushModal('payee-autocomplete', {
-              onSelect: payeeId => {
-                onUpdate('payee', payeeId);
+            pushModal({
+              modal: {
+                name: 'payee-autocomplete',
+                options: {
+                  onSelect: payeeId => {
+                    onUpdate('payee', payeeId);
+                  },
+                },
               },
             }),
           )
@@ -860,15 +874,20 @@ const Transaction = memo(function Transaction({
         if (showReconciliationWarning === false) {
           setShowReconciliationWarning(true);
           dispatch(
-            pushModal('confirm-transaction-edit', {
-              onCancel: () => {
-                setShowReconciliationWarning(false);
+            pushModal({
+              modal: {
+                name: 'confirm-transaction-edit',
+                options: {
+                  onCancel: () => {
+                    setShowReconciliationWarning(false);
+                  },
+                  onConfirm: () => {
+                    setShowReconciliationWarning(false);
+                    onUpdateAfterConfirm(name, value);
+                  },
+                  confirmReason: 'editReconciled',
+                },
               },
-              onConfirm: () => {
-                setShowReconciliationWarning(false);
-                onUpdateAfterConfirm(name, value);
-              },
-              confirmReason: 'editReconciled',
             }),
           );
         }
@@ -880,11 +899,16 @@ const Transaction = memo(function Transaction({
     // Allow un-reconciling (unlocking) transactions
     if (name === 'cleared' && transaction.reconciled) {
       dispatch(
-        pushModal('confirm-transaction-edit', {
-          onConfirm: () => {
-            onUpdateAfterConfirm('reconciled', false);
+        pushModal({
+          modal: {
+            name: 'confirm-transaction-edit',
+            options: {
+              onConfirm: () => {
+                onUpdateAfterConfirm('reconciled', false);
+              },
+              confirmReason: 'unlockReconciled',
+            },
           },
-          confirmReason: 'unlockReconciled',
         }),
       );
     }
@@ -2178,8 +2202,10 @@ export const TransactionTable = forwardRef((props, ref) => {
     if (newTransactions[0].account == null) {
       dispatch(
         addNotification({
-          type: 'error',
-          message: 'Account is a required field',
+          notification: {
+            type: 'error',
+            message: 'Account is a required field',
+          },
         }),
       );
       newNavigator.onEdit('temp', 'account');

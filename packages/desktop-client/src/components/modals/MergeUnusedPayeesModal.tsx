@@ -4,24 +4,27 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { Paragraph } from '@actual-app/components/paragraph';
 import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { replaceModal } from 'loot-core/client/actions/modals';
+import {
+  type Modal as ModalType,
+  replaceModal,
+} from 'loot-core/client/modals/modalsSlice';
 import { send } from 'loot-core/platform/client/fetch';
 import { type PayeeEntity } from 'loot-core/types/models';
 
 import { usePayees } from '../../hooks/usePayees';
 import { useSelector, useDispatch } from '../../redux';
-import { theme } from '../../style';
 import { Information } from '../alerts';
 import { Modal, ModalButtons } from '../common/Modal';
 
 const highlightStyle = { color: theme.pageTextPositive };
 
-type MergeUnusedPayeesModalProps = {
-  payeeIds: Array<PayeeEntity['id']>;
-  targetPayeeId: PayeeEntity['id'];
-};
+type MergeUnusedPayeesModalProps = Extract<
+  ModalType,
+  { name: 'merge-unused-payees' }
+>['options'];
 
 export function MergeUnusedPayeesModal({
   payeeIds,
@@ -82,7 +85,9 @@ export function MergeUnusedPayeesModal({
 
       if (ruleId) {
         const rule = await send('rule-get', { id: ruleId });
-        dispatch(replaceModal('edit-rule', { rule }));
+        dispatch(
+          replaceModal({ modal: { name: 'edit-rule', options: { rule } } }),
+        );
       }
     },
     [onMerge, dispatch],

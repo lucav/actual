@@ -3,6 +3,7 @@ import React, { type CSSProperties, useRef, useState } from 'react';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { InitialFocus } from '@actual-app/components/initial-focus';
+import { Input } from '@actual-app/components/input';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
@@ -12,7 +13,7 @@ import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 import { css, cx } from '@emotion/css';
 
-import { openAccountCloseModal } from 'loot-core/client/actions';
+import { openAccountCloseModal } from 'loot-core/client/modals/modalsSlice';
 import * as Platform from 'loot-core/client/platform';
 import {
   reopenAccount,
@@ -23,7 +24,6 @@ import { type AccountEntity } from 'loot-core/types/models';
 import { useContextMenu } from '../../hooks/useContextMenu';
 import { useNotes } from '../../hooks/useNotes';
 import { useDispatch } from '../../redux';
-import { Input } from '../common/Input';
 import { Link } from '../common/Link';
 import { Notes } from '../Notes';
 import {
@@ -234,7 +234,9 @@ export function Account<FieldName extends SheetFields<'account'>>({
                 onMenuSelect={type => {
                   switch (type) {
                     case 'close': {
-                      dispatch(openAccountCloseModal(account.id));
+                      dispatch(
+                        openAccountCloseModal({ accountId: account.id }),
+                      );
                       break;
                     }
                     case 'reopen': {

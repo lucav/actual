@@ -8,18 +8,26 @@ import React, {
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import {
+  SvgDotsHorizontalTriple,
+  SvgAdd,
+  SvgTrash,
+} from '@actual-app/components/icons/v1';
+import {
+  SvgNotesPaper,
+  SvgViewHide,
+  SvgViewShow,
+} from '@actual-app/components/icons/v2';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { type CategoryGroupEntity } from 'loot-core/types/models';
+import { type Modal as ModalType } from 'loot-core/client/modals/modalsSlice';
 
 import { useCategories } from '../../hooks/useCategories';
 import { useNotes } from '../../hooks/useNotes';
-import { SvgDotsHorizontalTriple, SvgAdd, SvgTrash } from '../../icons/v1';
-import { SvgNotesPaper, SvgViewHide, SvgViewShow } from '../../icons/v2';
-import { theme } from '../../style';
 import {
   Modal,
   ModalCloseButton,
@@ -28,16 +36,10 @@ import {
 } from '../common/Modal';
 import { Notes } from '../Notes';
 
-type CategoryGroupMenuModalProps = {
-  groupId: string;
-  onSave: (group: CategoryGroupEntity) => void;
-  onAddCategory: (groupId: string, isIncome: boolean) => void;
-  onEditNotes: (id: string) => void;
-  onSaveNotes: (id: string, notes: string) => void;
-  onDelete: (groupId: string) => void;
-  onToggleVisibility: (groupId: string) => void;
-  onClose?: () => void;
-};
+type CategoryGroupMenuModalProps = Extract<
+  ModalType,
+  { name: 'category-group-menu' }
+>['options'];
 
 export function CategoryGroupMenuModal({
   groupId,

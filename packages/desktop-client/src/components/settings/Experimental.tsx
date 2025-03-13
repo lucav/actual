@@ -2,13 +2,13 @@ import { type ReactNode, useState } from 'react';
 import { Trans } from 'react-i18next';
 
 import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import type { FeatureFlag } from 'loot-core/types/prefs';
 
 import { useFeatureFlag } from '../../hooks/useFeatureFlag';
 import { useSyncedPref } from '../../hooks/useSyncedPref';
-import { theme } from '../../style';
 import { Link } from '../common/Link';
 import { Checkbox } from '../forms';
 
@@ -110,6 +110,12 @@ export function ExperimentalFeatures() {
               feedbackLink="https://github.com/actualbudget/actual/issues/4029"
             >
               <Trans>OpenID authentication method</Trans>
+            </FeatureToggle>
+            <FeatureToggle
+              flag="pluggyAiBankSync"
+              feedbackLink="https://github.com/actualbudget/actual/pull/4049"
+            >
+              <Trans>Pluggy.ai Bank Sync (Brazilian banks only)</Trans>
             </FeatureToggle>
           </View>
         ) : (
