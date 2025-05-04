@@ -7,14 +7,14 @@ import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
 
+import { closeModal } from 'loot-core/client/modals/modalsSlice';
+
 import {
   linkAccount,
   linkAccountPluggyAi,
   linkAccountSimpleFin,
   unlinkAccount,
-} from 'loot-core/client/accounts/accountsSlice';
-import { closeModal } from 'loot-core/client/modals/modalsSlice';
-
+} from '../../accounts/accountsSlice';
 import { useAccounts } from '../../hooks/useAccounts';
 import { useDispatch } from '../../redux';
 import { Autocomplete } from '../autocomplete/Autocomplete';
@@ -322,7 +322,7 @@ function TableRow({
             }}
             style={{ float: 'right' }}
           >
-            <Trans>Remove bank-sync</Trans>
+            <Trans>Remove bank sync</Trans>
           </Button>
         ) : (
           <Button
@@ -332,7 +332,7 @@ function TableRow({
             }}
             style={{ float: 'right' }}
           >
-            <Trans>Set up bank-sync</Trans>
+            <Trans>Set up bank sync</Trans>
           </Button>
         )}
       </Field>
