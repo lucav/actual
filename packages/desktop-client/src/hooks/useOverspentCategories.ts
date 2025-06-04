@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { envelopeBudget, trackingBudget } from 'loot-core/client/queries';
-import { useSpreadsheet } from 'loot-core/client/SpreadsheetProvider';
 import * as monthUtils from 'loot-core/shared/months';
 
 import { useCategories } from './useCategories';
+import { useSpreadsheet } from './useSpreadsheet';
 import { useSyncedPref } from './useSyncedPref';
+
+import {
+  envelopeBudget,
+  trackingBudget,
+} from '@desktop-client/queries/queries';
 
 type UseOverspentCategoriesProps = {
   month: string;
@@ -13,7 +17,7 @@ type UseOverspentCategoriesProps = {
 
 export function useOverspentCategories({ month }: UseOverspentCategoriesProps) {
   const spreadsheet = useSpreadsheet();
-  const [budgetType = 'rollover'] = useSyncedPref('budgetType');
+  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
 
   const { list: categories } = useCategories();
 
@@ -21,9 +25,9 @@ export function useOverspentCategories({ month }: UseOverspentCategoriesProps) {
     () =>
       categories.map(category => [
         category.id,
-        budgetType === 'rollover'
-          ? envelopeBudget.catBalance(category.id)
-          : trackingBudget.catBalance(category.id),
+        budgetType === 'tracking'
+          ? trackingBudget.catBalance(category.id)
+          : envelopeBudget.catBalance(category.id),
       ]),
     [budgetType, categories],
   );
@@ -32,9 +36,9 @@ export function useOverspentCategories({ month }: UseOverspentCategoriesProps) {
     () =>
       categories.map(category => [
         category.id,
-        budgetType === 'rollover'
-          ? envelopeBudget.catCarryover(category.id)
-          : trackingBudget.catCarryover(category.id),
+        budgetType === 'tracking'
+          ? trackingBudget.catCarryover(category.id)
+          : envelopeBudget.catCarryover(category.id),
       ]),
     [budgetType, categories],
   );

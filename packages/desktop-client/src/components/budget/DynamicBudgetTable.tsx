@@ -7,11 +7,11 @@ import { View } from '@actual-app/components/view';
 
 import * as monthUtils from 'loot-core/shared/months';
 
-import { useGlobalPref } from '../../hooks/useGlobalPref';
-
 import { useBudgetMonthCount } from './BudgetMonthCountContext';
 import { BudgetPageHeader } from './BudgetPageHeader';
 import { BudgetTable } from './BudgetTable';
+
+import { useGlobalPref } from '@desktop-client/hooks/useGlobalPref';
 
 function getNumPossibleMonths(width: number, categoryWidth: number) {
   const estimatedTableWidth = width - categoryWidth;
@@ -106,7 +106,7 @@ const DynamicBudgetTableInner = ({
       _onMonthSelect(
         monthUtils.subMonths(
           monthUtils.currentMonth(),
-          type === 'rollover'
+          type === 'envelope'
             ? Math.floor((numMonths - 1) / 2)
             : numMonths === 2
               ? 1

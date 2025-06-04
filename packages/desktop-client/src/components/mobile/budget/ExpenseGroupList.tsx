@@ -5,18 +5,18 @@ import { useTranslation } from 'react-i18next';
 import { theme } from '@actual-app/components/theme';
 import { css } from '@emotion/css';
 
-import { moveCategoryGroup } from 'loot-core/client/queries/queriesSlice';
 import {
   type CategoryEntity,
   type CategoryGroupEntity,
 } from 'loot-core/types/models';
 
-import { useDispatch } from '../../../redux';
-
 import {
   ExpenseGroupHeader,
   ExpenseGroupListItem,
 } from './ExpenseGroupListItem';
+
+import { moveCategoryGroup } from '@desktop-client/queries/queriesSlice';
+import { useDispatch } from '@desktop-client/redux';
 
 type ExpenseGroupListProps = {
   categoryGroups: CategoryGroupEntity[];

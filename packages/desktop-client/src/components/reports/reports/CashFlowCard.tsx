@@ -9,21 +9,84 @@ import { ResponsiveContainer } from 'recharts';
 import { integerToCurrency } from 'loot-core/shared/util';
 import { type CashFlowWidget } from 'loot-core/types/models';
 
-import { Container } from '../Container';
-import { DateRange } from '../DateRange';
-import { LoadingIndicator } from '../LoadingIndicator';
-import { ReportCard } from '../ReportCard';
-import { ReportCardName } from '../ReportCardName';
-import { calculateTimeRange } from '../reportRanges';
-import { simpleCashFlow } from '../spreadsheets/cash-flow-spreadsheet';
-import { useReport } from '../useReport';
-
 import { defaultTimeFrame } from './CashFlow';
 import { renderCashFlowCardChartCondensed } from './renderCashFlowCardChartCondensed';
 import { renderCashFlowCardChartDetailed } from './renderCashFlowCardChartDetailed';
 import { renderCashFlowCardViewCondensed } from './renderCashFlowCardViewCondensed';
 import { renderCashFlowCardViewDetailed } from './renderCashFlowCardViewDetailed';
 import { useCashFlowDataDetailed } from './useCashFlowDataDetailed';
+
+import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
+import { Change } from '@desktop-client/components/reports/Change';
+import { chartTheme } from '@desktop-client/components/reports/chart-theme';
+import { Container } from '@desktop-client/components/reports/Container';
+import { DateRange } from '@desktop-client/components/reports/DateRange';
+import { LoadingIndicator } from '@desktop-client/components/reports/LoadingIndicator';
+import { ReportCard } from '@desktop-client/components/reports/ReportCard';
+import { ReportCardName } from '@desktop-client/components/reports/ReportCardName';
+import { calculateTimeRange } from '@desktop-client/components/reports/reportRanges';
+import { simpleCashFlow } from '@desktop-client/components/reports/spreadsheets/cash-flow-spreadsheet';
+import { useReport } from '@desktop-client/components/reports/useReport';
+
+type CustomLabelProps = {
+  value?: number;
+  name: string;
+  position?: 'left' | 'right';
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+};
+
+function CustomLabel({
+  value = 0,
+  name,
+  position = 'left',
+  x = 0,
+  y = 0,
+  width: barWidth = 0,
+  height: barHeight = 0,
+}: CustomLabelProps) {
+  const valueLengthOffset = 20;
+
+  const yOffset = barHeight < 25 ? 105 : y;
+
+  const labelXOffsets = {
+    right: 6,
+    left: -valueLengthOffset + 1,
+  };
+
+  const valueXOffsets = {
+    right: 6,
+    left: -valueLengthOffset + 2,
+  };
+
+  const anchorValue = {
+    right: 'start',
+    left: 'end',
+  };
+
+  return (
+    <>
+      <text
+        x={x + barWidth + labelXOffsets[position]}
+        y={yOffset + 10}
+        textAnchor={anchorValue[position]}
+        fill={theme.tableText}
+      >
+        {name}
+      </text>
+      <text
+        x={x + barWidth + valueXOffsets[position]}
+        y={yOffset + 26}
+        textAnchor={anchorValue[position]}
+        fill={theme.tableText}
+      >
+        <PrivacyFilter>{integerToCurrency(value)}</PrivacyFilter>
+      </text>
+    </>
+  );
+}
 
 type CashFlowCardProps = {
   widgetId: string;

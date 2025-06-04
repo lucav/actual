@@ -29,32 +29,32 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { setNotificationInset } from 'loot-core/client/notifications/notificationsSlice';
-import { validForTransfer } from 'loot-core/client/transfer';
 import * as monthUtils from 'loot-core/shared/months';
 import { isPreviewId } from 'loot-core/shared/transactions';
+import { validForTransfer } from 'loot-core/shared/transfer';
 import { groupById, integerToCurrency } from 'loot-core/shared/util';
 import {
   type AccountEntity,
   type TransactionEntity,
 } from 'loot-core/types/models';
 
-import { useAccounts } from '../../../hooks/useAccounts';
-import { useCategories } from '../../../hooks/useCategories';
-import { useLocale } from '../../../hooks/useLocale';
-import { useNavigate } from '../../../hooks/useNavigate';
-import { usePayees } from '../../../hooks/usePayees';
+import { TransactionListItem } from './TransactionListItem';
+
+import { FloatingActionBar } from '@desktop-client/components/mobile/FloatingActionBar';
+import { useScrollListener } from '@desktop-client/components/ScrollProvider';
+import { useAccounts } from '@desktop-client/hooks/useAccounts';
+import { useCategories } from '@desktop-client/hooks/useCategories';
+import { useLocale } from '@desktop-client/hooks/useLocale';
+import { useNavigate } from '@desktop-client/hooks/useNavigate';
+import { usePayees } from '@desktop-client/hooks/usePayees';
 import {
   useSelectedDispatch,
   useSelectedItems,
-} from '../../../hooks/useSelected';
-import { useTransactionBatchActions } from '../../../hooks/useTransactionBatchActions';
-import { useUndo } from '../../../hooks/useUndo';
-import { useDispatch } from '../../../redux';
-import { useScrollListener } from '../../ScrollProvider';
-import { FloatingActionBar } from '../FloatingActionBar';
-
-import { TransactionListItem } from './TransactionListItem';
+} from '@desktop-client/hooks/useSelected';
+import { useTransactionBatchActions } from '@desktop-client/hooks/useTransactionBatchActions';
+import { useUndo } from '@desktop-client/hooks/useUndo';
+import { setNotificationInset } from '@desktop-client/notifications/notificationsSlice';
+import { useDispatch } from '@desktop-client/redux';
 
 const NOTIFICATION_BOTTOM_INSET = 75;
 

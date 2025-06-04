@@ -13,17 +13,20 @@ import { View } from '@actual-app/components/view';
 import { css } from '@emotion/css';
 import { AutoTextSize } from 'auto-text-size';
 
-import { envelopeBudget, trackingBudget } from 'loot-core/client/queries';
 import * as monthUtils from 'loot-core/shared/months';
 import { type CategoryGroupEntity } from 'loot-core/types/models';
 
-import { useSyncedPref } from '../../../hooks/useSyncedPref';
-import { PrivacyFilter } from '../../PrivacyFilter';
-import { CellValue } from '../../spreadsheet/CellValue';
-import { useFormat } from '../../spreadsheet/useFormat';
-
 import { getColumnWidth, ROW_HEIGHT } from './BudgetTable';
 import { IncomeCategoryList } from './IncomeCategoryList';
+
+import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
+import { CellValue } from '@desktop-client/components/spreadsheet/CellValue';
+import { useFormat } from '@desktop-client/components/spreadsheet/useFormat';
+import { useSyncedPref } from '@desktop-client/hooks/useSyncedPref';
+import {
+  envelopeBudget,
+  trackingBudget,
+} from '@desktop-client/queries/queries';
 
 type IncomeGroupProps = {
   categoryGroup: CategoryGroupEntity;
@@ -48,7 +51,7 @@ export function IncomeGroup({
 }: IncomeGroupProps) {
   const { t } = useTranslation();
   const columnWidth = getColumnWidth();
-  const [budgetType = 'rollover'] = useSyncedPref('budgetType');
+  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
 
   const categories = useMemo(
     () =>
@@ -77,7 +80,7 @@ export function IncomeGroup({
           marginRight: 15,
         }}
       >
-        {budgetType === 'report' && (
+        {budgetType === 'tracking' && (
           <Label title={t('Budgeted')} style={{ width: columnWidth }} />
         )}
         <Label title={t('Received')} style={{ width: columnWidth }} />
@@ -238,14 +241,14 @@ type IncomeGroupCellsProps = {
 };
 
 function IncomeGroupCells({ group }: IncomeGroupCellsProps) {
-  const [budgetType = 'rollover'] = useSyncedPref('budgetType');
+  const [budgetType = 'envelope'] = useSyncedPref('budgetType');
   const format = useFormat();
 
   const budgeted =
-    budgetType === 'report' ? trackingBudget.groupBudgeted(group.id) : null;
+    budgetType === 'tracking' ? trackingBudget.groupBudgeted(group.id) : null;
 
   const balance =
-    budgetType === 'report'
+    budgetType === 'tracking'
       ? trackingBudget.groupSumAmount(group.id)
       : envelopeBudget.groupSumAmount(group.id);
 
