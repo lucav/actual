@@ -2,11 +2,11 @@ import React from 'react';
 
 import * as d from 'date-fns';
 
-import { useSpreadsheet } from 'loot-core/src/client/SpreadsheetProvider';
-import { send } from 'loot-core/src/platform/client/fetch';
-import * as monthUtils from 'loot-core/src/shared/months';
-import { q } from 'loot-core/src/shared/query';
-import { integerToCurrency, integerToAmount, toRelaxedNumber, getNumberFormat } from 'loot-core/src/shared/util';
+import { useSpreadsheet } from 'loot-core/client/SpreadsheetProvider';
+import { send } from 'loot-core/platform/client/fetch';
+import * as monthUtils from 'loot-core/shared/months';
+import { q } from 'loot-core/shared/query';
+import { integerToCurrency, integerToAmount, toRelaxedNumber, getNumberFormat } from 'loot-core/shared/util';
 import { type RuleConditionEntity } from 'loot-core/types/models';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -172,21 +172,21 @@ export function futureCashFlowByDate(
       const totsaved = await spreadsheet.get(sheetName, 'total-saved');
       projectedBalances.push({
         x: dateEnd,
-        y: (projectedBalances[i - 1]?.y ?? integerToAmount(startingBalance)) + integerToAmount(parseInt(totsaved.value)),
+        y: (projectedBalances[i - 1]?.y ?? integerToAmount(startingBalance)) + integerToAmount(parseInt(totsaved.value.toString())),
         premadeLabel: <span>Forecasted</span>,
-        amount: (projectedBalances[i - 1]?.amount ?? startingBalance) + parseInt(totsaved.value)
+        amount: (projectedBalances[i - 1]?.amount ?? startingBalance) + parseInt(totsaved.value.toString())
       });
   
       const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
       projectedIncome.push({
         x: dateEnd,
-        y: integerToAmount(parseInt(totincome.value))
+        y: integerToAmount(parseInt(totincome.value.toString()))
       });
   
       const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
       projectedExpenses.push({
         x: dateEnd,
-        y: -integerToAmount(parseInt(totbudgeted.value))
+        y: -integerToAmount(parseInt(totbudgeted.value.toString()))
       });
     }
 

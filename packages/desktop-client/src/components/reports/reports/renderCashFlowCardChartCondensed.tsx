@@ -4,7 +4,7 @@ import React from 'react';
 import { type TFunction } from 'i18next';
 import { Bar, BarChart, LabelList } from 'recharts';
 
-import { integerToCurrency } from 'loot-core/src/shared/util';
+import { integerToCurrency } from 'loot-core/shared/util';
 
 import { SvgExclamationSolid } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
