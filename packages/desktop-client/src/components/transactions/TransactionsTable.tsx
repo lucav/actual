@@ -590,7 +590,9 @@ function PayeeCell({
               <Tooltip
                 content={
                   <View style={{ padding: 10 }}>
-                    <Text style={{ fontWeight: 'bold' }}>Imported Payee</Text>
+                    <Text style={{ fontWeight: 'bold' }}>
+                      <Trans>Imported Payee</Trans>
+                    </Text>
                     <Text style={{ fontWeight: 'normal' }}>
                       {importedPayee}
                     </Text>
@@ -667,7 +669,9 @@ function PayeeCell({
                 <Tooltip
                   content={
                     <View style={{ padding: 10 }}>
-                      <Text style={{ fontWeight: 'bold' }}>Imported Payee</Text>
+                      <Text style={{ fontWeight: 'bold' }}>
+                        <Trans>Imported Payee</Trans>
+                      </Text>
                       <Text style={{ fontWeight: 'normal' }}>
                         {importedPayee}
                       </Text>
@@ -740,6 +744,8 @@ function PayeeIcons({
   onNavigateToTransferAccount,
   onNavigateToSchedule,
 }: PayeeIconsProps) {
+  const { t } = useTranslation();
+
   const scheduleId = transaction.schedule;
   const { isLoading, schedules = [] } = useCachedSchedules();
 
@@ -763,7 +769,7 @@ function PayeeIcons({
         <Button
           variant="bare"
           data-testid="schedule-icon"
-          aria-label="See schedule details"
+          aria-label={t('See schedule details')}
           style={payeeIconButtonStyle}
           onPress={() => {
             if (scheduleId) {
@@ -782,7 +788,7 @@ function PayeeIcons({
         <Button
           variant="bare"
           data-testid="transfer-icon"
-          aria-label="See transfer account"
+          aria-label={t('See transfer account')}
           style={payeeIconButtonStyle}
           onPress={() => {
             if (!isTemporaryId(transaction.id)) {
@@ -899,6 +905,8 @@ const Transaction = memo(function Transaction({
   showSelection,
   allowSplitTransaction,
 }: TransactionProps) {
+  const { t } = useTranslation();
+
   const dispatch = useDispatch();
   const dispatchSelected = useSelectedDispatch();
   const triggerRef = useRef(null);
@@ -1451,7 +1459,7 @@ const Transaction = memo(function Transaction({
                     userSelect: 'none',
                   }}
                 >
-                  Split
+                  <Trans>Split</Trans>
                 </Text>
               )}
             </View>
@@ -1468,13 +1476,13 @@ const Transaction = memo(function Transaction({
           onExpose={name => onEdit(id, name)}
           value={
             isParent
-              ? 'Split'
+              ? t('Split')
               : isOffBudget
-                ? 'Off budget'
+                ? t('Off budget')
                 : isBudgetTransfer
                   ? categoryId != null
-                    ? 'Needs Repair'
-                    : 'Transfer'
+                    ? t('Needs Repair')
+                    : t('Transfer')
                   : ''
           }
           valueStyle={valueStyle}
@@ -1499,7 +1507,7 @@ const Transaction = memo(function Transaction({
             value
               ? (getCategoriesById(categoryGroups)[value]?.name ?? '')
               : transaction.id
-                ? 'Categorize'
+                ? t('Categorize')
                 : ''
           }
           exposed={focusedField === 'category'}
@@ -1681,7 +1689,7 @@ function TransactionError({
             data-testid="transaction-error"
           >
             <Text>
-              Amount left:{' '}
+              <Trans>Amount left:</Trans>{' '}
               <Text style={{ fontWeight: 500 }}>
                 {integerToCurrency(
                   isDeposit ? error.difference : -error.difference,
@@ -1696,7 +1704,7 @@ function TransactionError({
               data-testid="distribute-split-button"
               isDisabled={!canDistributeRemainder}
             >
-              Distribute
+              <Trans>Distribute</Trans>
             </Button>
             <Button
               variant="primary"
@@ -1704,7 +1712,7 @@ function TransactionError({
               onPress={onAddSplit}
               data-testid="add-split-button"
             >
-              Add Split
+              <Trans>Add Split</Trans>
             </Button>
           </View>
         );
@@ -2303,6 +2311,8 @@ export const TransactionTable = forwardRef(
     props: TransactionTableProps,
     ref: ForwardedRef<TableHandleRef<TransactionEntity>>,
   ) => {
+    const { t } = useTranslation();
+
     const dispatch = useDispatch();
     const [newTransactions, setNewTransactions] = useState<
       TransactionEntity[] | null
@@ -2452,7 +2462,7 @@ export const TransactionTable = forwardRef(
           addNotification({
             notification: {
               type: 'error',
-              message: 'Account is a required field',
+              message: t('Account is a required field'),
             },
           }),
         );
