@@ -140,7 +140,7 @@ export function CashFlowGraph({
               dataKey="date"
               tick={{ fill: theme.reportsLabel }}
               tickFormatter={x => {
-                // eslint-disable-next-line rulesdir/typography
+                // eslint-disable-next-line actual/typography
                 return d.format(x, isConcise ? "MMM ''yy" : 'MMM d', {
                   locale,
                 });
@@ -160,7 +160,7 @@ export function CashFlowGraph({
             />
             <Tooltip
               labelFormatter={x => {
-                // eslint-disable-next-line rulesdir/typography
+                // eslint-disable-next-line actual/typography
                 return d.format(x, isConcise ? "MMM ''yy" : 'MMM d', {
                   locale,
                 });
