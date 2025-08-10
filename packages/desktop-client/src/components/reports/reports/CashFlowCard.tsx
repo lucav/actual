@@ -6,7 +6,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { ResponsiveContainer } from 'recharts';
 
-import { integerToCurrency } from 'loot-core/shared/util';
 import { type CashFlowWidget } from 'loot-core/types/models';
 
 import { defaultTimeFrame } from './CashFlow';
@@ -27,6 +26,7 @@ import { ReportCardName } from '@desktop-client/components/reports/ReportCardNam
 import { calculateTimeRange } from '@desktop-client/components/reports/reportRanges';
 import { simpleCashFlow } from '@desktop-client/components/reports/spreadsheets/cash-flow-spreadsheet';
 import { useReport } from '@desktop-client/components/reports/useReport';
+import { useFormat } from '@desktop-client/hooks/useFormat';
 
 type CustomLabelProps = {
   value?: number;
@@ -47,6 +47,8 @@ function CustomLabel({
   width: barWidth = 0,
   height: barHeight = 0,
 }: CustomLabelProps) {
+  const format = useFormat();
+
   const valueLengthOffset = 20;
 
   const yOffset = barHeight < 25 ? 105 : y;
@@ -82,7 +84,7 @@ function CustomLabel({
         textAnchor={anchorValue[position]}
         fill={theme.tableText}
       >
-        <PrivacyFilter>{integerToCurrency(value)}</PrivacyFilter>
+        <PrivacyFilter>{format(value, 'financial')}</PrivacyFilter>
       </text>
     </>
   );
