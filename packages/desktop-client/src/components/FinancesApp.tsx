@@ -14,7 +14,6 @@ import { BankSync } from './banksync';
 import { BankSyncStatus } from './BankSyncStatus';
 import { CommandBar } from './CommandBar';
 import { GlobalKeys } from './GlobalKeys';
-import { Category } from './mobile/budget/Category';
 import { MobileNavTabs } from './mobile/MobileNavTabs';
 import { TransactionEdit } from './mobile/transactions/TransactionEdit';
 import { Notifications } from './Notifications';
@@ -87,7 +86,7 @@ export function FinancesApp() {
   const { t } = useTranslation();
 
   const accounts = useAccounts();
-  const accountsLoaded = useSelector(state => state.queries.accountsLoaded);
+  const isAccountsLoaded = useSelector(state => state.account.isAccountsLoaded);
 
   const [lastUsedVersion, setLastUsedVersion] = useLocalPref(
     'flags.updateNotificationShownForVersion',
@@ -225,7 +224,7 @@ export function FinancesApp() {
                 <Route
                   path="/"
                   element={
-                    accountsLoaded ? (
+                    isAccountsLoaded ? (
                       accounts.length > 0 ? (
                         <Navigate to="/budget" replace />
                       ) : (
@@ -259,6 +258,10 @@ export function FinancesApp() {
                 <Route
                   path="/rules"
                   element={<NarrowAlternate name="Rules" />}
+                />
+                <Route
+                  path="/rules/:id"
+                  element={<NarrowAlternate name="RuleEdit" />}
                 />
                 <Route path="/bank-sync" element={<BankSync />} />
                 <Route path="/tags" element={<ManageTagsPage />} />
@@ -294,11 +297,7 @@ export function FinancesApp() {
 
                 <Route
                   path="/categories/:id"
-                  element={
-                    <WideNotSupported>
-                      <Category />
-                    </WideNotSupported>
-                  }
+                  element={<NarrowAlternate name="Category" />}
                 />
                 {multiuserEnabled && (
                   <Route
