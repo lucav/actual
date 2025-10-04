@@ -2,8 +2,9 @@
 import React from 'react';
 
 import { View } from '@actual-app/components/view';
-import { PrivacyFilter } from '../../PrivacyFilter';
-import { Change } from '../Change';
+
+import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
+import { Change } from '@desktop-client/components/reports/Change';
 
 export const renderCashFlowCardViewCondensed = (
   isCardHovered: boolean,

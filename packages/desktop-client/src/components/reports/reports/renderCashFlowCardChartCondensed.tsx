@@ -1,18 +1,18 @@
 // @ts-strict-ignore
 import React from 'react';
 
-import { type TFunction } from 'i18next';
-import { Bar, BarChart, LabelList } from 'recharts';
-
-import { integerToCurrency } from 'loot-core/shared/util';
-
 import { SvgExclamationSolid } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
-import { PrivacyFilter } from '../../PrivacyFilter';
-import { chartTheme } from '../chart-theme';
+import { type TFunction } from 'i18next';
+import { Bar, BarChart, LabelList } from 'recharts';
+
+import { integerToCurrency } from 'loot-core/shared/util';
+
+import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
+import { chartTheme } from '@desktop-client/components/reports/chart-theme';
 
 export const renderCashFlowCardChartCondensed = (
   width: number,
@@ -108,7 +108,10 @@ function CustomLabel({
     left: -valueLengthOffset + 2,
   };
 
-  const anchorValue = {
+  const anchorValue: {
+    right: 'start' | 'end' | 'middle' | 'inherit';
+    left: 'start' | 'end' | 'middle' | 'inherit';
+  } = {
     right: 'start',
     left: 'end',
   };

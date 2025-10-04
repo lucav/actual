@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { type JSX } from 'react';
 
+import { AlignedText } from '@actual-app/components/aligned-text';
 import * as d from 'date-fns';
+import { round } from 'lodash';
 
-import { useSpreadsheet } from 'loot-core/client/SpreadsheetProvider';
 import { send } from 'loot-core/platform/client/fetch';
 import * as monthUtils from 'loot-core/shared/months';
 import { q } from 'loot-core/shared/query';
-import { integerToCurrency, integerToAmount, toRelaxedNumber, getNumberFormat } from 'loot-core/shared/util';
+import {
+  integerToCurrency,
+  integerToAmount,
+  toRelaxedNumber,
+  getNumberFormat,
+} from 'loot-core/shared/util';
 import { type RuleConditionEntity } from 'loot-core/types/models';
 
-import { AlignedText } from '@actual-app/components/aligned-text';
-import { runAll, indexCashFlow } from '../util';
-import { round } from 'lodash';
-
+import { runAll, indexCashFlow } from '@desktop-client/components/reports/util';
+import { type useSpreadsheet } from '@desktop-client/hooks/useSpreadsheet';
 
 export function simpleCashFlow(
   startMonth: string,
@@ -68,14 +72,14 @@ export function simpleCashFlow(
   };
 }
 
-const projectedExpenses: Array<{ x: Date; y: number }> = new Array();
-const projectedIncome: Array<{ x: Date; y: number }> = new Array();
+const projectedExpenses: Array<{ x: Date; y: number }> = [];
+const projectedIncome: Array<{ x: Date; y: number }> = [];
 const projectedBalances: Array<{
-    x: Date,
-    y: number,
-    premadeLabel: JSX.Element,
-    amount: number
-}> = new Array();
+  x: Date;
+  y: number;
+  premadeLabel: JSX.Element;
+  amount: number;
+}> = [];
 const today = new Date();
 
 export function futureCashFlowByDate(
@@ -87,13 +91,14 @@ export function futureCashFlowByDate(
 ) {
   const start = monthUtils.firstDayOfMonth(startMonth);
   const fixedEnd = monthUtils.lastDayOfMonth(endMonth);
-  const realFixedEnd = isConcise ? monthUtils.firstDayOfMonth(endMonth) : monthUtils.lastDayOfMonth(endMonth);
+  const realFixedEnd = isConcise
+    ? monthUtils.firstDayOfMonth(endMonth)
+    : monthUtils.lastDayOfMonth(endMonth);
 
   return async (
     spreadsheet: ReturnType<typeof useSpreadsheet>,
     setData: (data: ReturnType<typeof recalculate>) => void,
   ) => {
-    
     function makeQuery() {
       const query = q('transactions')
         .filter({
@@ -130,8 +135,8 @@ export function futureCashFlowByDate(
       conditions: conditions.filter(cond => !cond.customName),
     });
     const conditionsOpKey = conditionsOp === 'or' ? '$or' : '$and';
-    
-    let startingBalance:number = 0;
+
+    let startingBalance: number = 0;
     await runAll(
       [
         q('transactions')
@@ -140,10 +145,10 @@ export function futureCashFlowByDate(
             date: { $transform: '$month', $lt: getFirstDayOfMonth(today) },
             'account.offbudget': false,
           })
-          .calculate({ $sum: '$amount' })      
+          .calculate({ $sum: '$amount' }),
       ],
       data => {
-        startingBalance = parseInt(data);    
+        startingBalance = parseInt(data);
       },
     );
 
@@ -155,14 +160,16 @@ export function futureCashFlowByDate(
 
     for (let i = 0; i <= 6; i++) {
       const futureMonth = monthUtils.addMonths(today, i);
-      const futureEnd = isConcise ? monthUtils.firstDayOfMonth(futureMonth) : monthUtils.lastDayOfMonth(futureMonth);
-  
+      const futureEnd = isConcise
+        ? monthUtils.firstDayOfMonth(futureMonth)
+        : monthUtils.lastDayOfMonth(futureMonth);
+
       //console.log(futureMonth, futureEnd, realFixedEnd);
 
       const dateEnd = monthUtils.parseDate(futureEnd);
       dateEnd.setHours(0, 0, 0, 0);
 
-      if(d.isAfter(dateEnd, monthUtils.parseDate(realFixedEnd))){
+      if (d.isAfter(dateEnd, monthUtils.parseDate(realFixedEnd))) {
         //console.log("break");
         break;
       }
@@ -172,21 +179,25 @@ export function futureCashFlowByDate(
       const totsaved = await spreadsheet.get(sheetName, 'total-saved');
       projectedBalances.push({
         x: dateEnd,
-        y: (projectedBalances[i - 1]?.y ?? integerToAmount(startingBalance)) + integerToAmount(parseInt(totsaved.value.toString())),
+        y:
+          (projectedBalances[i - 1]?.y ?? integerToAmount(startingBalance)) +
+          integerToAmount(parseInt(totsaved.value.toString())),
         premadeLabel: <span>Forecasted</span>,
-        amount: (projectedBalances[i - 1]?.amount ?? startingBalance) + parseInt(totsaved.value.toString())
+        amount:
+          (projectedBalances[i - 1]?.amount ?? startingBalance) +
+          parseInt(totsaved.value.toString()),
       });
-  
+
       const totincome = await spreadsheet.get(sheetName, 'total-budget-income');
       projectedIncome.push({
         x: dateEnd,
-        y: integerToAmount(parseInt(totincome.value.toString()))
+        y: integerToAmount(parseInt(totincome.value.toString())),
       });
-  
+
       const totbudgeted = await spreadsheet.get(sheetName, 'total-budgeted');
       projectedExpenses.push({
         x: dateEnd,
-        y: -integerToAmount(parseInt(totbudgeted.value.toString()))
+        y: -integerToAmount(parseInt(totbudgeted.value.toString())),
       });
     }
 
@@ -202,10 +213,10 @@ export function futureCashFlowByDate(
           })
           .calculate({ $sum: '$amount' }),
         makeQuery().filter({ amount: { $gt: 0 } }),
-        makeQuery().filter({ amount: { $lt: 0 } }),        
+        makeQuery().filter({ amount: { $lt: 0 } }),
       ],
       data => {
-        setData(recalculate(data, start, fixedEnd, isConcise));        
+        setData(recalculate(data, start, fixedEnd, isConcise));
       },
     );
   };
@@ -219,7 +230,7 @@ function recalculate(
   ],
   start: string,
   end: string,
-  isConcise: boolean
+  isConcise: boolean,
 ) {
   const [startingBalance, income, expense] = data;
   const convIncome = income.map(t => {
@@ -256,10 +267,10 @@ function recalculate(
     }>;
   }>(
     (res, date) => {
-      let income:number = 0;
-      let expense:number = 0;
-      let creditTransfers:number = 0;
-      let debitTransfers:number = 0;
+      let income: number = 0;
+      let expense: number = 0;
+      let creditTransfers: number = 0;
+      let debitTransfers: number = 0;
 
       if (incomes[date]) {
         income = !incomes[date].false ? 0 : incomes[date].false;
@@ -347,12 +358,12 @@ function getFirstDayOfMonth(date: Date): Date {
 }
 
 function updateArray(
-  originalArray: Array<{ x: Date; y: number; }>,
-  newData: Array<{ x: Date; y: number; }>
-): Array<{ x: Date; y: number; }> {
-  newData.map((newItem) => {
-    const index = originalArray.findIndex(
-      (item) => d.isSameDay(item.x, newItem.x)
+  originalArray: Array<{ x: Date; y: number }>,
+  newData: Array<{ x: Date; y: number }>,
+): Array<{ x: Date; y: number }> {
+  newData.map(newItem => {
+    const index = originalArray.findIndex(item =>
+      d.isSameDay(item.x, newItem.x),
     );
     if (index !== -1) {
       // Sostituiamo l'elemento esistente
@@ -368,12 +379,22 @@ function updateArray(
 }
 
 function updateArrayBalance(
-  originalArray: Array<{ x: Date; y: number; premadeLabel: JSX.Element; amount: number }>,
-  newData: Array<{ x: Date; y: number; premadeLabel: JSX.Element; amount: number }>
+  originalArray: Array<{
+    x: Date;
+    y: number;
+    premadeLabel: JSX.Element;
+    amount: number;
+  }>,
+  newData: Array<{
+    x: Date;
+    y: number;
+    premadeLabel: JSX.Element;
+    amount: number;
+  }>,
 ): Array<{ x: Date; y: number; premadeLabel: JSX.Element; amount: number }> {
-  newData.map((newItem) => {
-    const index = originalArray.findIndex(
-      (item) => d.isSameDay(item.x, newItem.x)
+  newData.map(newItem => {
+    const index = originalArray.findIndex(item =>
+      d.isSameDay(item.x, newItem.x),
     );
     if (index !== -1) {
       // Sostituiamo l'elemento esistente
@@ -388,60 +409,78 @@ function updateArrayBalance(
   return originalArray;
 }
 
-function populateForecast(graphData:{
-  expenses: Array<{ x: Date; y: number }>;
-  income: Array<{ x: Date; y: number }>;
-  transfers: Array<{ x: Date; y: number }>;
-  balances: Array<{
-    x: Date;
-    y: number;
-    premadeLabel: JSX.Element;
-    amount: number;
-  }>;
-}, isConcise: boolean) {
-
+function populateForecast(
+  graphData: {
+    expenses: Array<{ x: Date; y: number }>;
+    income: Array<{ x: Date; y: number }>;
+    transfers: Array<{ x: Date; y: number }>;
+    balances: Array<{
+      x: Date;
+      y: number;
+      premadeLabel: JSX.Element;
+      amount: number;
+    }>;
+  },
+  isConcise: boolean,
+) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const actualMonth = monthUtils.parseDate(isConcise ? getFirstDayOfPreviousMonth(today) : getEndOfPreviousMonth(today));
-  
-  // Applica la proiezione lineare per ogni giorno del mese
-  graphData.balances = graphData.balances.map((balance) => {
+  const actualMonth = monthUtils.parseDate(
+    isConcise
+      ? getFirstDayOfPreviousMonth(today)
+      : getEndOfPreviousMonth(today),
+  );
 
-    if(!d.isAfter(balance.x, today)){
+  // Applica la proiezione lineare per ogni giorno del mese
+  graphData.balances = graphData.balances.map(balance => {
+    if (!d.isAfter(balance.x, today)) {
       //console.log("balance.x => ", balance.x, " is past");
       return balance;
     }
 
-    const monthEnd = isConcise ? monthUtils.firstDayOfMonth(balance.x) : monthUtils.lastDayOfMonth(balance.x);
-    const previousMonth = isConcise ? getFirstDayOfPreviousMonth(balance.x) : getEndOfPreviousMonth(balance.x);
+    const monthEnd = isConcise
+      ? monthUtils.firstDayOfMonth(balance.x)
+      : monthUtils.lastDayOfMonth(balance.x);
+    const previousMonth = isConcise
+      ? getFirstDayOfPreviousMonth(balance.x)
+      : getEndOfPreviousMonth(balance.x);
 
     const dateMonthStart = monthUtils.parseDate(previousMonth);
-    const dateMonthEnd = monthUtils.parseDate(monthEnd);  
+    const dateMonthEnd = monthUtils.parseDate(monthEnd);
     dateMonthStart.setHours(0, 0, 0, 0);
     dateMonthEnd.setHours(0, 0, 0, 0);
 
-    const newBalance = projectedBalances.find(
-      (balance) => d.isSameDay(balance.x, dateMonthEnd)
+    const newBalance = projectedBalances.find(balance =>
+      d.isSameDay(balance.x, dateMonthEnd),
     );
 
-    const previousMonthBalance = d.isAfter(dateMonthStart, actualMonth) ? projectedBalances.find(
-      (balance) => d.isSameDay(balance.x, dateMonthStart)
-    ) : balance;
-    
+    const previousMonthBalance = d.isAfter(dateMonthStart, actualMonth)
+      ? projectedBalances.find(balance =>
+          d.isSameDay(balance.x, dateMonthStart),
+        )
+      : balance;
+
     //console.log(dateMonthStart, dateMonthEnd, newBalance, previousMonthBalance);
 
-    if(newBalance && d.isSameDay(balance.x, dateMonthEnd)){
+    if (newBalance && d.isSameDay(balance.x, dateMonthEnd)) {
       //console.log("balance.x => ", balance.x, " is end month");
       return { ...newBalance, x: balance.x };
-    } else if (newBalance && previousMonthBalance && d.isAfter(balance.x, dateMonthStart) && d.isBefore(balance.x, dateMonthEnd)) {
+    } else if (
+      newBalance &&
+      previousMonthBalance &&
+      d.isAfter(balance.x, dateMonthStart) &&
+      d.isBefore(balance.x, dateMonthEnd)
+    ) {
       //console.log("balance.x => ", balance.x);
       //console.log("before => ",balance);
 
       // Calcola l'incremento giornaliero per il mese attuale
       const daysInMonth = d.differenceInDays(dateMonthEnd, dateMonthStart);
-      const dailyIncrement = (newBalance.amount - previousMonthBalance.amount) / daysInMonth;
+      const dailyIncrement =
+        (newBalance.amount - previousMonthBalance.amount) / daysInMonth;
       const daysFromStart = d.differenceInDays(balance.x, dateMonthStart);
-      balance.amount = previousMonthBalance.amount + round(dailyIncrement * daysFromStart, 0);
+      balance.amount =
+        previousMonthBalance.amount + round(dailyIncrement * daysFromStart, 0);
       balance.y = integerToAmount(balance.amount);
 
       //console.log("after => ",balance);
@@ -449,8 +488,11 @@ function populateForecast(graphData:{
 
     return balance;
   });
-      
-  graphData.balances = updateArrayBalance(graphData.balances, projectedBalances);
+
+  graphData.balances = updateArrayBalance(
+    graphData.balances,
+    projectedBalances,
+  );
   graphData.expenses = updateArray(graphData.expenses, projectedExpenses);
   graphData.income = updateArray(graphData.income, projectedIncome);
 

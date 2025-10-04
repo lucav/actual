@@ -75,6 +75,7 @@ const exportModel = {
         ![
           'net-worth-card',
           'cash-flow-card',
+          'cash-flow-card-custom',
           'spending-card',
           'custom-report',
           'markdown-card',

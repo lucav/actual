@@ -2,16 +2,16 @@
 import React from 'react';
 import { Trans } from 'react-i18next';
 
+import { AlignedText } from '@actual-app/components/aligned-text';
 import { Block } from '@actual-app/components/block';
+import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
+import { View } from '@actual-app/components/view';
 
 import { integerToCurrency } from 'loot-core/shared/util';
 
-import { theme } from '@actual-app/components/theme';
-import { AlignedText } from '@actual-app/components/aligned-text';
-import { Text } from '@actual-app/components/text';
-import { View } from '@actual-app/components/view';
-import { PrivacyFilter } from '../../PrivacyFilter';
-import { Change } from '../Change';
+import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
+import { Change } from '@desktop-client/components/reports/Change';
 
 export const renderCashFlowCardViewDetailed = (
   totalIncome: number,

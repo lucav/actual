@@ -25,6 +25,7 @@ import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
 import { LoadingIndicator } from './LoadingIndicator';
 import { CalendarCard } from './reports/CalendarCard';
 import { CashFlowCard } from './reports/CashFlowCard';
+import { CashFlowCard as CashFlowCardCustom } from './reports/CashFlowCardCustom';
 import { CustomReportListCards } from './reports/CustomReportListCards';
 import { MarkdownCard } from './reports/MarkdownCard';
 import { NetWorthCard } from './reports/NetWorthCard';
@@ -413,6 +414,10 @@ export function Overview() {
                               text: t('Cash flow graph'),
                             },
                             {
+                              name: 'cash-flow-card-custom' as const,
+                              text: t('Cash flow graph (Custom)'),
+                            },
+                            {
                               name: 'net-worth-card' as const,
                               text: t('Net worth graph'),
                             },
@@ -554,6 +559,14 @@ export function Overview() {
                     />
                   ) : item.type === 'cash-flow-card' ? (
                     <CashFlowCard
+                      widgetId={item.i}
+                      isEditing={isEditing}
+                      meta={item.meta}
+                      onMetaChange={newMeta => onMetaChange(item, newMeta)}
+                      onRemove={() => onRemoveWidget(item.i)}
+                    />
+                  ) : item.type === 'cash-flow-card-custom' ? (
+                    <CashFlowCardCustom
                       widgetId={item.i}
                       isEditing={isEditing}
                       meta={item.meta}

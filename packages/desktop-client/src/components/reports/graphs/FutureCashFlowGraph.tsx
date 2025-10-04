@@ -1,9 +1,10 @@
-import React, { CSSProperties, useState } from 'react';
+import React, { type CSSProperties, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import * as d from 'date-fns';
-
+import { AlignedText } from '@actual-app/components/aligned-text';
+import { theme } from '@actual-app/components/theme';
 import { css } from '@emotion/css';
+import * as d from 'date-fns';
 import {
   Bar,
   CartesianGrid,
@@ -17,17 +18,15 @@ import {
   type TooltipProps,
 } from 'recharts';
 
+import { firstDayOfMonth } from 'loot-core/shared/months';
 import {
   amountToCurrency,
   amountToCurrencyNoDecimal,
 } from 'loot-core/shared/util';
 
-import { usePrivacyMode } from '../../../hooks/usePrivacyMode';
-import { AlignedText } from '@actual-app/components/aligned-text';
-import { theme } from '@actual-app/components/theme';
-import { chartTheme } from '../chart-theme';
-import { Container } from '../Container';
-import { firstDayOfMonth } from 'loot-core/shared/months';
+import { chartTheme } from '@desktop-client/components/reports/chart-theme';
+import { Container } from '@desktop-client/components/reports/Container';
+import { usePrivacyMode } from '@desktop-client/hooks/usePrivacyMode';
 
 const MAX_BAR_SIZE = 50;
 const ANIMATION_DURATION = 1000; // in ms
@@ -69,16 +68,31 @@ function CustomTooltip({ active, payload, isConcise }: CustomTooltipProps) {
         <div style={{ lineHeight: 1.5 }}>
           <AlignedText
             left={t('Income:')}
-            right={amountToCurrency(data.income == 0 ? data.incomeForecast : data.income)}
+            right={amountToCurrency(
+              data.income == 0 ? data.incomeForecast : data.income,
+            )}
           />
           <AlignedText
             left={t('Expenses:')}
-            right={amountToCurrency(data.expenses == 0 ? data.expensesForecast : data.expenses)}
+            right={amountToCurrency(
+              data.expenses == 0 ? data.expensesForecast : data.expenses,
+            )}
           />
           <AlignedText
             left={t('Change:')}
             right={
-              <strong>{amountToCurrency(parseFloat(data.income == 0 ? data.incomeForecast : data.income) + parseFloat(data.expenses == 0 ? data.expensesForecast : data.expenses))}</strong>
+              <strong>
+                {amountToCurrency(
+                  parseFloat(
+                    data.income == 0 ? data.incomeForecast : data.income,
+                  ) +
+                    parseFloat(
+                      data.expenses == 0
+                        ? data.expensesForecast
+                        : data.expenses,
+                    ),
+                )}
+              </strong>
             }
           />
           {data.transfers !== 0 && (
@@ -135,7 +149,10 @@ export function FutureCashFlowGraph({
 
   const pastData = data.filter(dt => !d.isAfter(dt.date, today));
   const futureData = data.map(dt =>
-    (!d.isBefore(dt.date, today)) || (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)) ) ? dt : { ...dt, balance: null }
+    !d.isBefore(dt.date, today) ||
+    (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)))
+      ? dt
+      : { ...dt, balance: null },
   );
 
   //console.log(today, pastData, data);
@@ -152,14 +169,38 @@ export function FutureCashFlowGraph({
           >
             <defs>
               {/* Definizione di un pattern SVG con strisce bianche e rosse diagonali a 45° */}
-              <pattern id="stripedPatternRed" width={8} height={8} patternUnits="userSpaceOnUse">
+              <pattern
+                id="stripedPatternRed"
+                width={8}
+                height={8}
+                patternUnits="userSpaceOnUse"
+              >
                 <rect width={8} height={8} fill={chartTheme.colors.red} />
-                <line x1={0} y1={8} x2={8} y2={0} stroke="white" strokeWidth={2} />
+                <line
+                  x1={0}
+                  y1={8}
+                  x2={8}
+                  y2={0}
+                  stroke="white"
+                  strokeWidth={2}
+                />
               </pattern>
               {/* Definizione di un pattern SVG con strisce bianche e blu diagonali a 45° */}
-              <pattern id="stripedPatternBlue" width={8} height={8} patternUnits="userSpaceOnUse">
+              <pattern
+                id="stripedPatternBlue"
+                width={8}
+                height={8}
+                patternUnits="userSpaceOnUse"
+              >
                 <rect width={8} height={8} fill={chartTheme.colors.blue} />
-                <line x1={0} y1={8} x2={8} y2={0} stroke="white" strokeWidth={2} />
+                <line
+                  x1={0}
+                  y1={8}
+                  x2={8}
+                  y2={0}
+                  stroke="white"
+                  strokeWidth={2}
+                />
               </pattern>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -203,7 +244,7 @@ export function FutureCashFlowGraph({
             />
             <Bar
               dataKey="expenses"
-              stackId="a"              
+              stackId="a"
               fill={chartTheme.colors.red}
               maxBarSize={MAX_BAR_SIZE}
               animationDuration={ANIMATION_DURATION}
@@ -219,7 +260,7 @@ export function FutureCashFlowGraph({
             />
             <Bar
               dataKey="expensesForecast"
-              stackId="a"              
+              stackId="a"
               fill="url(#stripedPatternRed)"
               maxBarSize={MAX_BAR_SIZE}
               animationDuration={ANIMATION_DURATION}
@@ -228,7 +269,7 @@ export function FutureCashFlowGraph({
 
             <Line
               type="monotone"
-              isAnimationActive={false}              
+              isAnimationActive={false}
               data={pastData}
               dataKey="balance"
               strokeDasharray="none"

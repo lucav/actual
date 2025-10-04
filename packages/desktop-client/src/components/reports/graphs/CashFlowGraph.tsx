@@ -192,7 +192,7 @@ export function CashFlowGraph({
 
             <Line
               type="monotone"
-              isAnimationActive={false}              
+              isAnimationActive={false}
               data={data}
               dataKey="balance"
               strokeDasharray="none"
@@ -202,7 +202,6 @@ export function CashFlowGraph({
               strokeWidth={2}
               animationDuration={ANIMATION_DURATION}
             />
-
           </ComposedChart>
         </ResponsiveContainer>
       )}

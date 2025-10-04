@@ -1,7 +1,7 @@
 // @ts-strict-ignore
 import React from 'react';
 
-import { FutureCashFlowGraph } from '../graphs/FutureCashFlowGraph';
+import { FutureCashFlowGraph } from '@desktop-client/components/reports/graphs/FutureCashFlowGraph';
 
 export const renderCashFlowCardChartDetailed = (
   graphData: {

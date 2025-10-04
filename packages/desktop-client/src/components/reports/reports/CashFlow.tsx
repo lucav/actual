@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
@@ -43,9 +43,6 @@ import { useSyncedPref } from '@desktop-client/hooks/useSyncedPref';
 import { useWidget } from '@desktop-client/hooks/useWidget';
 import { addNotification } from '@desktop-client/notifications/notificationsSlice';
 import { useDispatch } from '@desktop-client/redux';
-
-import { useCashFlowDataDetailed } from './useCashFlowDataDetailed';
-import { FutureCashFlowGraph } from '../graphs/FutureCashFlowGraph';
 
 export const defaultTimeFrame = {
   start: monthUtils.dayFromDate(monthUtils.currentMonth()),
@@ -94,22 +91,14 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     pretty: string;
   }>>(null);
 
-  const offset = widget?.meta?.timeFrame.forecastOffsetMonths ?? 0;
-
-  const [initialStart, initialEnd, initialMode] = calculateTimeRange(
-    widget?.meta?.timeFrame,
-    defaultTimeFrame,
-  );
-  const [start, setStart] = useState(initialStart);
-  const [end, setEnd] = useState(initialEnd);
-  const [mode, setMode] = useState(initialMode);
+  const [start, setStart] = useState(monthUtils.currentMonth());
+  const [end, setEnd] = useState(monthUtils.currentMonth());
+  const [mode, setMode] = useState<TimeFrame['mode']>('sliding-window');
   const [showBalance, setShowBalance] = useState(
     widget?.meta?.showBalance ?? true,
   );
-  const today = new Date();
-  const [isFutureCashFlow, setisFutureCashFlow] = useState(d.isAfter(new Date(end), today) ? true : false);
-  const [forecastOffsetMonths, setForecastOffsetMonths] = useState(offset);
-  
+  const [latestTransaction, setLatestTransaction] = useState('');
+
   const [isConcise, setIsConcise] = useState(() => {
     const numDays = d.differenceInCalendarDays(
       d.parseISO(end),
@@ -118,26 +107,44 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     return numDays > 31 * 3;
   });
 
-  const data = useCashFlowDataDetailed(
-    start,
-    end,
-    isConcise,
-    conditions,
-    conditionsOp,
+  const params = useMemo(
+    () =>
+      cashFlowByDate(
+        start,
+        end,
+        isConcise,
+        conditions,
+        conditionsOp,
+        locale,
+        format,
+      ),
+    [start, end, isConcise, conditions, conditionsOp, locale, format],
   );
+  const data = useReport('cash_flow', params);
 
   useEffect(() => {
     async function run() {
-      const trans = await send('get-earliest-transaction');
-      const earliestMonth = trans
-        ? monthUtils.monthFromDate(d.parseISO(trans.date))
+      const earliestTransaction = await send('get-earliest-transaction');
+      setEarliestTransaction(
+        earliestTransaction
+          ? earliestTransaction.date
+          : monthUtils.currentDay(),
+      );
+
+      const latestTransaction = await send('get-latest-transaction');
+      setLatestTransaction(
+        latestTransaction ? latestTransaction.date : monthUtils.currentDay(),
+      );
+
+      const earliestMonth = earliestTransaction
+        ? monthUtils.monthFromDate(d.parseISO(earliestTransaction.date))
+        : monthUtils.currentMonth();
+      const latestMonth = latestTransaction
+        ? monthUtils.monthFromDate(d.parseISO(latestTransaction.date))
         : monthUtils.currentMonth();
 
-      const ddate = new Date();
-      ddate.setMonth(ddate.getMonth() + 6);
-
       const allMonths = monthUtils
-        .rangeInclusive(earliestMonth, d.format(ddate, 'yyyy-MM'))
+        .rangeInclusive(earliestMonth, latestMonth)
         .map(month => ({
           name: month,
           pretty: monthUtils.format(month, 'MMMM, yyyy', locale),
@@ -149,27 +156,30 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     run();
   }, [locale]);
 
+  useEffect(() => {
+    if (latestTransaction) {
+      const [initialStart, initialEnd, initialMode] = calculateTimeRange(
+        widget?.meta?.timeFrame,
+        defaultTimeFrame,
+        latestTransaction,
+      );
+      setStart(initialStart);
+      setEnd(initialEnd);
+      setMode(initialMode);
+    }
+  }, [latestTransaction, widget?.meta?.timeFrame]);
+
   function onChangeDates(start: string, end: string, mode: TimeFrame['mode']) {
     const numDays = d.differenceInCalendarDays(
       d.parseISO(end),
       d.parseISO(start),
     );
     const isConcise = numDays > 31 * 3;
-    const today = new Date();
 
     setStart(start);
     setEnd(end);
-    
+    setMode(mode);
     setIsConcise(isConcise);
-    if(d.isAfter(new Date(end), today)){
-      setisFutureCashFlow(true);
-      setMode('sliding-window');
-      const offset = monthUtils.differenceInCalendarMonths(end, today);
-      setForecastOffsetMonths(offset);
-    }else{
-      setMode(mode);
-      setisFutureCashFlow(false);
-    }
   }
 
   const navigate = useNavigate();
@@ -190,7 +200,6 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
           start,
           end,
           mode,
-          forecastOffsetMonths
         },
         showBalance,
       },
@@ -198,8 +207,8 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     dispatch(
       addNotification({
         notification: {
-        type: 'message',
-        message: t('Dashboard widget successfully saved.'),
+          type: 'message',
+          message: t('Dashboard widget successfully saved.'),
         },
       }),
     );
@@ -221,7 +230,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     });
   };
 
-  const [earliestTransaction, _] = useState('');
+  const [earliestTransaction, setEarliestTransaction] = useState('');
   const [_firstDayOfWeekIdx] = useSyncedPref('firstDayOfWeekIdx');
   const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
 
@@ -263,6 +272,7 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
         start={start}
         end={end}
         earliestTransaction={earliestTransaction}
+        latestTransaction={latestTransaction}
         firstDayOfWeekIdx={firstDayOfWeekIdx}
         mode={mode}
         show1Month
@@ -356,19 +366,11 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
           </Text>
         </View>
 
-        {
-          isFutureCashFlow ? 
-          <FutureCashFlowGraph
-            graphData={graphData}
-            isConcise={isConcise}
-            showBalance={showBalance}
-          /> :
-          <CashFlowGraph
-            graphData={graphData}
-            isConcise={isConcise}
-            showBalance={showBalance}
-          />
-        }
+        <CashFlowGraph
+          graphData={graphData}
+          isConcise={isConcise}
+          showBalance={showBalance}
+        />
 
         <View
           style={{
