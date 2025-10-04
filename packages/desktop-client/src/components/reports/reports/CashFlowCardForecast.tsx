@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import * as d from 'date-fns';
 import { View } from '@actual-app/components/view';
+import * as d from 'date-fns';
 import { ResponsiveContainer } from 'recharts';
 
 import { type CashFlowForecastWidget } from 'loot-core/types/models';
@@ -42,7 +42,22 @@ export function CashFlowCardForecast({
 
   const MIN_DETAILED_CHART_HEIGHT = 290;
 
-  const [start, end] = calculateTimeRange(meta?.timeFrame, defaultTimeFrame);
+  // Usa i valori salvati nel widget se disponibili, altrimenti calcola i valori di default
+  const [defaultStart, defaultEnd] = calculateTimeRange(
+    meta?.timeFrame,
+    defaultTimeFrame,
+  );
+  const start = meta?.timeFrame?.start || defaultStart;
+  const end = meta?.timeFrame?.end || defaultEnd;
+  
+  // Assicurati che start e end siano sempre definiti
+  if (!start || !end) {
+    console.error('CashFlowCardForecast - start o end non definiti:', { start, end, meta });
+    return <LoadingIndicator />;
+  }
+  
+  // mode per la visualizzazione della card (condensed/full), non per il timeFrame
+  const cardMode = meta?.mode;
   const [nameMenuOpen, setNameMenuOpen] = useState(false);
 
   const numDays = d.differenceInCalendarDays(
@@ -85,7 +100,7 @@ export function CashFlowCardForecast({
     expenses: number = 0,
     income: number = 0;
 
-  if (meta && meta?.mode !== undefined && meta?.mode === 'full') {
+  if (meta && cardMode !== undefined && cardMode === 'full') {
     switchFlag = true;
     graphDataDetailed = dataDetailed?.graphData || {
       expenses: [{ x: new Date(), y: 0 }],
@@ -107,10 +122,7 @@ export function CashFlowCardForecast({
   const graphDataCondensed = dataCondensed?.graphData || null;
   income = graphDataCondensed?.income || 0;
   expenses = -(graphDataCondensed?.expense || 0);
-  if (
-    graphDataCondensed &&
-    (meta?.mode === 'condensed' || meta?.mode === undefined)
-  ) {
+  if (graphDataCondensed && (cardMode === 'condensed' || cardMode === undefined)) {
     dataOk = true;
   }
 
@@ -178,7 +190,7 @@ export function CashFlowCardForecast({
             <DateRange start={start} end={end} />
           </View>
           {dataOk &&
-            (meta?.mode === 'condensed' || meta?.mode === undefined
+            (cardMode === 'condensed' || cardMode === undefined
               ? renderCashFlowCardViewCondensed(isCardHovered, income, expenses)
               : renderCashFlowCardViewDetailed(
                   totalIncome,
@@ -192,7 +204,7 @@ export function CashFlowCardForecast({
           <Container style={{ height: 'auto', flex: 1 }}>
             {(width, height) => (
               <ResponsiveContainer>
-                {isCondensedMode(meta?.mode, height)
+                {isCondensedMode(cardMode, height)
                   ? renderCashFlowCardChartCondensed(
                       width,
                       height,
@@ -200,8 +212,7 @@ export function CashFlowCardForecast({
                       expenses,
                       t,
                       Boolean(
-                        height < MIN_DETAILED_CHART_HEIGHT &&
-                          meta?.mode === 'full',
+                        height < MIN_DETAILED_CHART_HEIGHT && cardMode === 'full',
                       ),
                     )
                   : renderCashFlowCardChartDetailed(

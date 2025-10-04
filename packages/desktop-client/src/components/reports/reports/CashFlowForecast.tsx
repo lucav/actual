@@ -98,16 +98,14 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     widget?.meta?.timeFrame,
     defaultTimeFrame,
   );
-  
+
   // Usa i valori salvati nel widget se disponibili, altrimenti usa i valori calcolati
   const [start, setStart] = useState(
-    widget?.meta?.timeFrame?.start || initialStart
+    widget?.meta?.timeFrame?.start || initialStart,
   );
-  const [end, setEnd] = useState(
-    widget?.meta?.timeFrame?.end || initialEnd
-  );
+  const [end, setEnd] = useState(widget?.meta?.timeFrame?.end || initialEnd);
   const [mode, setMode] = useState(
-    widget?.meta?.timeFrame?.mode || initialMode
+    widget?.meta?.timeFrame?.mode || initialMode,
   );
   const [showBalance, setShowBalance] = useState(
     widget?.meta?.showBalance ?? true,
