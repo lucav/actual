@@ -98,16 +98,25 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     widget?.meta?.timeFrame,
     defaultTimeFrame,
   );
-  const [start, setStart] = useState(initialStart);
-  const [end, setEnd] = useState(initialEnd);
-  const [mode, setMode] = useState(initialMode);
+  
+  // Usa i valori salvati nel widget se disponibili, altrimenti usa i valori calcolati
+  const [start, setStart] = useState(
+    widget?.meta?.timeFrame?.start || initialStart
+  );
+  const [end, setEnd] = useState(
+    widget?.meta?.timeFrame?.end || initialEnd
+  );
+  const [mode, setMode] = useState(
+    widget?.meta?.timeFrame?.mode || initialMode
+  );
   const [showBalance, setShowBalance] = useState(
     widget?.meta?.showBalance ?? true,
   );
   const today = new Date();
-  const [isFutureCashFlow, setisFutureCashFlow] = useState(
-    d.isAfter(new Date(end), today) ? true : false,
-  );
+  const [isFutureCashFlow, setisFutureCashFlow] = useState(() => {
+    const endDate = widget?.meta?.timeFrame?.end || initialEnd;
+    return d.isAfter(new Date(endDate), today);
+  });
   const [forecastOffsetMonths, setForecastOffsetMonths] = useState(offset);
 
   const [isConcise, setIsConcise] = useState(() => {
@@ -117,21 +126,6 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     );
     return numDays > 31 * 3;
   });
-
-  // Aggiorna i valori quando il widget cambia
-  useEffect(() => {
-    if (widget?.meta?.timeFrame) {
-      const [newStart, newEnd, newMode] = calculateTimeRange(
-        widget.meta.timeFrame,
-        defaultTimeFrame,
-      );
-      setStart(newStart);
-      setEnd(newEnd);
-      setMode(newMode);
-      setShowBalance(widget.meta.showBalance ?? true);
-      setForecastOffsetMonths(widget.meta.timeFrame.forecastOffsetMonths ?? 0);
-    }
-  }, [widget?.meta?.timeFrame, widget?.meta?.showBalance]);
 
   const data = useCashFlowDataDetailed(
     start,
