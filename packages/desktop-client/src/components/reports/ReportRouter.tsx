@@ -4,7 +4,7 @@ import { Route, Routes } from 'react-router';
 import { Overview } from './Overview';
 import { Calendar } from './reports/Calendar';
 import { CashFlow } from './reports/CashFlow';
-import { CashFlow as CashFlowCustom } from './reports/CashFlowCustom';
+import { CashFlowForecast } from './reports/CashFlowForecast';
 import { CustomReport } from './reports/CustomReport';
 import { NetWorth } from './reports/NetWorth';
 import { Spending } from './reports/Spending';
@@ -18,8 +18,8 @@ export function ReportRouter() {
       <Route path="/net-worth/:id" element={<NetWorth />} />
       <Route path="/cash-flow" element={<CashFlow />} />
       <Route path="/cash-flow/:id" element={<CashFlow />} />
-      <Route path="/cash-flow-custom" element={<CashFlowCustom />} />
-      <Route path="/cash-flow-custom/:id" element={<CashFlowCustom />} />
+      <Route path="/cash-flow-forecast" element={<CashFlowForecast />} />
+      <Route path="/cash-flow-forecast/:id" element={<CashFlowForecast />} />
       <Route path="/custom" element={<CustomReport />} />
       <Route path="/custom/:id" element={<CustomReport />} />
       <Route path="/spending" element={<Spending />} />

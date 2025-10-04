@@ -15,7 +15,7 @@ import * as d from 'date-fns';
 import { send } from 'loot-core/platform/client/fetch';
 import * as monthUtils from 'loot-core/shared/months';
 import {
-  type CashFlowCustomWidget,
+  type CashFlowForecastWidget,
   type RuleConditionEntity,
   type TimeFrame,
 } from 'loot-core/types/models';
@@ -45,18 +45,17 @@ import { useWidget } from '@desktop-client/hooks/useWidget';
 import { addNotification } from '@desktop-client/notifications/notificationsSlice';
 import { useDispatch } from '@desktop-client/redux';
 
-
 export const defaultTimeFrame = {
   start: monthUtils.dayFromDate(monthUtils.currentMonth()),
   end: monthUtils.currentDay(),
   mode: 'sliding-window',
 } satisfies TimeFrame;
 
-export function CashFlow() {
+export function CashFlowForecast() {
   const params = useParams();
-  const { data: widget, isLoading } = useWidget<CashFlowCustomWidget>(
+  const { data: widget, isLoading } = useWidget<CashFlowForecastWidget>(
     params.id ?? '',
-    'cash-flow-card-custom',
+    'cash-flow-card-forecast',
   );
 
   if (isLoading) {
@@ -67,7 +66,7 @@ export function CashFlow() {
 }
 
 type CashFlowInnerProps = {
-  widget?: CashFlowCustomWidget;
+  widget?: CashFlowForecastWidget;
 };
 
 function CashFlowInner({ widget }: CashFlowInnerProps) {
@@ -102,7 +101,9 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
   const [start, setStart] = useState(initialStart);
   const [end, setEnd] = useState(initialEnd);
   const [mode, setMode] = useState(initialMode);
-  const [showBalance, setShowBalance] = useState(true);
+  const [showBalance, setShowBalance] = useState(
+    widget?.meta?.showBalance ?? true,
+  );
   const today = new Date();
   const [isFutureCashFlow, setisFutureCashFlow] = useState(
     d.isAfter(new Date(end), today) ? true : false,
@@ -116,6 +117,21 @@ function CashFlowInner({ widget }: CashFlowInnerProps) {
     );
     return numDays > 31 * 3;
   });
+
+  // Aggiorna i valori quando il widget cambia
+  useEffect(() => {
+    if (widget?.meta?.timeFrame) {
+      const [newStart, newEnd, newMode] = calculateTimeRange(
+        widget.meta.timeFrame,
+        defaultTimeFrame,
+      );
+      setStart(newStart);
+      setEnd(newEnd);
+      setMode(newMode);
+      setShowBalance(widget.meta.showBalance ?? true);
+      setForecastOffsetMonths(widget.meta.timeFrame.forecastOffsetMonths ?? 0);
+    }
+  }, [widget?.meta?.timeFrame, widget?.meta?.showBalance]);
 
   const data = useCashFlowDataDetailed(
     start,

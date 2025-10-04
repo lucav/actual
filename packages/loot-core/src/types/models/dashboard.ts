@@ -49,14 +49,15 @@ export type CashFlowWidget = AbstractWidget<
     showBalance?: boolean;
   } | null
 >;
-export type CashFlowCustomWidget = AbstractWidget<
-  'cash-flow-card-custom',
+export type CashFlowForecastWidget = AbstractWidget<
+  'cash-flow-card-forecast',
   {
     name?: string;
     conditions?: RuleConditionEntity[];
     conditionsOp?: 'and' | 'or';
     timeFrame?: TimeFrame;
     mode?: 'condensed' | 'full';
+    showBalance?: boolean;
   } | null
 >;
 export type SpendingWidget = AbstractWidget<
@@ -83,7 +84,7 @@ export type MarkdownWidget = AbstractWidget<
 type SpecializedWidget =
   | NetWorthWidget
   | CashFlowWidget
-  | CashFlowCustomWidget
+  | CashFlowForecastWidget
   | SpendingWidget
   | MarkdownWidget
   | SummaryWidget

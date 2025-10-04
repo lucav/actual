@@ -5,9 +5,9 @@ import * as d from 'date-fns';
 import { View } from '@actual-app/components/view';
 import { ResponsiveContainer } from 'recharts';
 
-import { type CashFlowCustomWidget } from 'loot-core/types/models';
+import { type CashFlowForecastWidget } from 'loot-core/types/models';
 
-import { defaultTimeFrame } from './CashFlow';
+import { defaultTimeFrame } from './CashFlowForecast';
 import { renderCashFlowCardChartCondensed } from './renderCashFlowCardChartCondensed';
 import { renderCashFlowCardChartDetailed } from './renderCashFlowCardChartDetailed';
 import { renderCashFlowCardViewCondensed } from './renderCashFlowCardViewCondensed';
@@ -23,21 +23,21 @@ import { calculateTimeRange } from '@desktop-client/components/reports/reportRan
 import { simpleCashFlow } from '@desktop-client/components/reports/spreadsheets/cash-flow-spreadsheet';
 import { useReport } from '@desktop-client/components/reports/useReport';
 
-type CashFlowCardProps = {
+type CashFlowCardForecastProps = {
   widgetId: string;
   isEditing?: boolean;
-  meta?: CashFlowCustomWidget['meta'];
-  onMetaChange: (newMeta: CashFlowCustomWidget['meta']) => void;
+  meta?: CashFlowForecastWidget['meta'];
+  onMetaChange: (newMeta: CashFlowForecastWidget['meta']) => void;
   onRemove: () => void;
 };
 
-export function CashFlowCard({
+export function CashFlowCardForecast({
   widgetId,
   isEditing,
   meta = {},
   onMetaChange,
   onRemove,
-}: CashFlowCardProps) {
+}: CashFlowCardForecastProps) {
   const { t } = useTranslation();
 
   const MIN_DETAILED_CHART_HEIGHT = 290;
@@ -118,7 +118,7 @@ export function CashFlowCard({
     <ReportCard
       isEditing={isEditing}
       disableClick={nameMenuOpen}
-      to={`/reports/cash-flow-custom/${widgetId}`}
+      to={`/reports/cash-flow-forecast/${widgetId}`}
       menuItems={[
         {
           name: 'change-view',
