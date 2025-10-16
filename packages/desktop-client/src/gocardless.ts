@@ -22,7 +22,8 @@ function _authorize(
           onMoveExternal: async ({ institutionId }) => {
             const resp = await send('gocardless-create-web-token', {
               institutionId,
-              accessValidForDays: 90,
+              accessValidForDays: 89,
+              // https://bankaccountdata.zendesk.com/hc/en-gb/articles/11529718632476-Extended-history-and-continuous-access-edge-cases
             });
 
             if ('error' in resp) return resp;
