@@ -335,13 +335,14 @@ export const goCardlessService = {
         console.log('Failed to link using:');
         console.log(body);
         console.log(
-          'Falling back to accessValidForDays = 90 ' +
+          'Falling back to accessValidForDays = 89 ' +
             'and maxHistoricalDays = 89',
         );
 
         response = await client.initSession({
           ...body,
-          accessValidForDays: 90,
+          accessValidForDays: 89,
+          // https://bankaccountdata.zendesk.com/hc/en-gb/articles/11529718632476-Extended-history-and-continuous-access-edge-cases
           maxHistoricalDays: 89,
         });
       } catch (error) {
