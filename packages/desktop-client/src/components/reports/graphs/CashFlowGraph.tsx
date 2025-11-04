@@ -11,7 +11,6 @@ import {
   ComposedChart,
   Line,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -143,8 +142,8 @@ export function CashFlowGraph({
   return (
     <Container style={style}>
       {(width, height) => (
-        <ResponsiveContainer>
           <ComposedChart
+          responsive
             width={width}
             height={height}
             stackOffset="sign"
@@ -214,7 +213,6 @@ export function CashFlowGraph({
               animationDuration={ANIMATION_DURATION}
             />
           </ComposedChart>
-        </ResponsiveContainer>
       )}
     </Container>
   );

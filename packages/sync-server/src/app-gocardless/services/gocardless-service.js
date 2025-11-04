@@ -3,7 +3,7 @@ import * as nordigenNode from 'nordigen-node';
 import { v4 as uuidv4 } from 'uuid';
 
 import { SecretName, secretsService } from '../../services/secrets-service.js';
-import { BankFactory } from '../bank-factory.js';
+import { BankFactory, isSpecialContinuousAccessBank } from '../bank-factory.js';
 import {
   AccessDeniedError,
   AccountNotLinkedToRequisition,
@@ -321,8 +321,10 @@ export const goCardlessService = {
       redirectUrl: host + '/gocardless/link',
       institutionId,
       referenceId: uuidv4(),
-      accessValidForDays: institution.max_access_valid_for_days > 89 ? 89 : institution.max_access_valid_for_days,
-      maxHistoricalDays: institution.transaction_total_days > 89 ? 89 : institution.transaction_total_days,
+      accessValidForDays: institution.max_access_valid_for_days,
+      maxHistoricalDays: isSpecialContinuousAccessBank(institutionId)
+        ? 90
+        : institution.transaction_total_days,
       userLanguage: 'en',
       ssn: null,
       redirectImmediate: false,
