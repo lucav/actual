@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import React from 'react';
+import React, { type CSSProperties } from 'react';
 
 import { FutureCashFlowGraph } from '@desktop-client/components/reports/graphs/FutureCashFlowGraph';
 
@@ -11,12 +11,14 @@ export const renderCashFlowCardChartDetailed = (
     transfers: { x: Date; y: number }[];
   },
   isConcise: boolean,
+  style?: CSSProperties,
 ) => {
   return (
     <FutureCashFlowGraph
       graphData={graphData}
       isConcise={isConcise}
       showBalance={true}
+      style={style}
     />
   );
 };

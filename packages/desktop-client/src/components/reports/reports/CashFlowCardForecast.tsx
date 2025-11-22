@@ -201,27 +201,31 @@ export function CashFlowCardForecast({
         </View>
 
         {dataOk ? (
-          <Container style={{ height: 'auto', flex: 1 }}>
-            {(width, height) => (
-              <ResponsiveContainer>
-                {isCondensedMode(cardMode, height)
-                  ? renderCashFlowCardChartCondensed(
+          cardMode === 'full' ? (
+            // FutureCashFlowGraph ha già il suo Container interno, passiamo lo stile per farlo espandere
+            renderCashFlowCardChartDetailed(
+              graphDataDetailed,
+              isConcise,
+              { flex: 1, minHeight: MIN_DETAILED_CHART_HEIGHT },
+            )
+          ) : (
+            <Container style={{ flex: 1, minHeight: MIN_DETAILED_CHART_HEIGHT }}>
+              {(width, height) => (
+                width > 0 && height > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    {renderCashFlowCardChartCondensed(
                       width,
                       height,
                       income,
                       expenses,
                       t,
-                      Boolean(
-                        height < MIN_DETAILED_CHART_HEIGHT && cardMode === 'full',
-                      ),
-                    )
-                  : renderCashFlowCardChartDetailed(
-                      graphDataDetailed,
-                      isConcise,
+                      false,
                     )}
-              </ResponsiveContainer>
-            )}
-          </Container>
+                  </ResponsiveContainer>
+                ) : null
+              )}
+            </Container>
+          )
         ) : (
           <LoadingIndicator />
         )}
