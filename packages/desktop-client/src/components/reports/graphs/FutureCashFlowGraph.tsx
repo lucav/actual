@@ -1,4 +1,4 @@
-import React, { type CSSProperties, useState } from 'react';
+import React, { type CSSProperties, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
@@ -15,7 +15,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  type TooltipProps,
 } from 'recharts';
 
 import { firstDayOfMonth } from 'loot-core/shared/months';
@@ -31,7 +30,21 @@ import { usePrivacyMode } from '@desktop-client/hooks/usePrivacyMode';
 const MAX_BAR_SIZE = 50;
 const ANIMATION_DURATION = 1000; // in ms
 
-type CustomTooltipProps = TooltipProps<number, 'date'> & {
+type PayloadItem = {
+  payload: {
+    date: Date;
+    income: number;
+    expenses: number;
+    balance: number;
+    transfers: number;
+    expensesForecast: number;
+    incomeForecast: number;
+  };
+};
+
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: PayloadItem[];
   isConcise: boolean;
 };
 
@@ -83,14 +96,10 @@ function CustomTooltip({ active, payload, isConcise }: CustomTooltipProps) {
             right={
               <strong>
                 {amountToCurrency(
-                  parseFloat(
-                    data.income == 0 ? data.incomeForecast : data.income,
-                  ) +
-                    parseFloat(
-                      data.expenses == 0
-                        ? data.expensesForecast
-                        : data.expenses,
-                    ),
+                  (data.income == 0 ? data.incomeForecast : data.income) +
+                    (data.expenses == 0
+                      ? data.expensesForecast
+                      : data.expenses),
                 )}
               </strong>
             }
@@ -131,28 +140,43 @@ export function FutureCashFlowGraph({
   const privacyMode = usePrivacyMode();
   const [yAxisIsHovered, setYAxisIsHovered] = useState(false);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
 
   //console.log("graphData.expenses => ", graphData.expenses);
   //console.log("graphData.balances => ", graphData.balances);
 
-  const data = graphData.expenses.map((row, idx) => ({
-    date: row.x,
-    expenses: d.isAfter(row.x, today) ? 0 : row.y,
-    income: d.isAfter(row.x, today) ? 0 : graphData.income[idx].y,
-    balance: graphData.balances[idx].y,
-    transfers: graphData.transfers[idx] ? graphData.transfers[idx].y : 0,
-    expensesForecast: d.isAfter(row.x, today) ? row.y : 0,
-    incomeForecast: d.isAfter(row.x, today) ? graphData.income[idx].y : 0,
-  }));
+  const data = useMemo(
+    () =>
+      graphData.expenses.map((row, idx) => ({
+        date: row.x,
+        expenses: d.isAfter(row.x, today) ? 0 : row.y,
+        income: d.isAfter(row.x, today) ? 0 : graphData.income[idx].y,
+        balance: graphData.balances[idx].y,
+        transfers: graphData.transfers[idx] ? graphData.transfers[idx].y : 0,
+        expensesForecast: d.isAfter(row.x, today) ? row.y : 0,
+        incomeForecast: d.isAfter(row.x, today) ? graphData.income[idx].y : 0,
+      })),
+    [graphData.expenses, graphData.income, graphData.balances, graphData.transfers, today],
+  );
 
-  const pastData = data.filter(dt => !d.isAfter(dt.date, today));
-  const futureData = data.map(dt =>
-    !d.isBefore(dt.date, today) ||
-    (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)))
-      ? dt
-      : { ...dt, balance: null },
+  const pastData = useMemo(
+    () => data.filter(dt => !d.isAfter(dt.date, today)),
+    [data, today],
+  );
+
+  const futureData = useMemo(
+    () =>
+      data.map(dt =>
+        !d.isBefore(dt.date, today) ||
+        (isConcise && d.isSameDay(dt.date, getFirstDayOfMonth(today)))
+          ? dt
+          : { ...dt, balance: null },
+      ),
+    [data, today, isConcise],
   );
 
   //console.log(today, pastData, data);

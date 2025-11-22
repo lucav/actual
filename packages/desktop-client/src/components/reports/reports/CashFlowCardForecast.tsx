@@ -86,45 +86,68 @@ export function CashFlowCardForecast({
     meta?.conditionsOp ?? 'and',
   );
 
-  let dataOk: boolean = false,
-    switchFlag: boolean = false,
-    graphDataDetailed = {
+  // Memoizza graphDataDetailed per evitare re-render infiniti
+  const defaultGraphData = useMemo(
+    () => ({
       expenses: [{ x: new Date(), y: 0 }],
       income: [{ x: new Date(), y: 0 }],
       balances: [{ x: new Date(), y: 0 }],
       transfers: [{ x: new Date(), y: 0 }],
-    },
-    totalExpenses: number = 0,
-    totalIncome: number = 0,
-    totalTransfers: number = 0,
-    expenses: number = 0,
-    income: number = 0;
+    }),
+    [],
+  );
 
-  if (meta && cardMode !== undefined && cardMode === 'full') {
-    switchFlag = true;
-    graphDataDetailed = dataDetailed?.graphData || {
-      expenses: [{ x: new Date(), y: 0 }],
-      income: [{ x: new Date(), y: 0 }],
-      balances: [{ x: new Date(), y: 0 }],
-      transfers: [{ x: new Date(), y: 0 }],
-    };
-    totalExpenses = dataDetailed?.totalExpenses || 0;
-    totalIncome = dataDetailed?.totalIncome || 0;
-    totalTransfers = dataDetailed?.totalTransfers || 0;
-    dataOk = Boolean(dataDetailed);
-  }
+  const switchFlag = useMemo(
+    () => meta && cardMode !== undefined && cardMode === 'full',
+    [meta, cardMode],
+  );
+
+  const graphDataDetailed = useMemo(() => {
+    if (switchFlag && dataDetailed?.graphData) {
+      return dataDetailed.graphData;
+    }
+    return defaultGraphData;
+  }, [switchFlag, dataDetailed?.graphData, defaultGraphData]);
+
+  const totalExpenses = useMemo(
+    () => (switchFlag ? dataDetailed?.totalExpenses || 0 : 0),
+    [switchFlag, dataDetailed?.totalExpenses],
+  );
+
+  const totalIncome = useMemo(
+    () => (switchFlag ? dataDetailed?.totalIncome || 0 : 0),
+    [switchFlag, dataDetailed?.totalIncome],
+  );
+
+  const totalTransfers = useMemo(
+    () => (switchFlag ? dataDetailed?.totalTransfers || 0 : 0),
+    [switchFlag, dataDetailed?.totalTransfers],
+  );
+
+  const graphDataCondensed = dataCondensed?.graphData || null;
+  const income = useMemo(
+    () => graphDataCondensed?.income || 0,
+    [graphDataCondensed?.income],
+  );
+  const expenses = useMemo(
+    () => -(graphDataCondensed?.expense || 0),
+    [graphDataCondensed?.expense],
+  );
+
+  const dataOk = useMemo(() => {
+    if (switchFlag) {
+      return Boolean(dataDetailed);
+    }
+    if (graphDataCondensed && (cardMode === 'condensed' || cardMode === undefined)) {
+      return true;
+    }
+    return false;
+  }, [switchFlag, dataDetailed, graphDataCondensed, cardMode]);
 
   const isCondensedMode = (mode: string | undefined, height: number) =>
     mode === 'condensed' ||
     mode === undefined ||
     height < MIN_DETAILED_CHART_HEIGHT;
-
-  const graphDataCondensed = dataCondensed?.graphData || null;
-  income = graphDataCondensed?.income || 0;
-  expenses = -(graphDataCondensed?.expense || 0);
-  if (graphDataCondensed && (cardMode === 'condensed' || cardMode === undefined)) {
-    dataOk = true;
-  }
 
   return (
     <ReportCard
