@@ -321,7 +321,9 @@ export const goCardlessService = {
       redirectUrl: host + '/gocardless/link',
       institutionId,
       referenceId: uuidv4(),
-      accessValidForDays: institution.max_access_valid_for_days,
+      accessValidForDays: isSpecialContinuousAccessBank(institutionId)
+        ? 90
+        : institution.max_access_valid_for_days,
       maxHistoricalDays: isSpecialContinuousAccessBank(institutionId)
         ? 90
         : institution.transaction_total_days,
