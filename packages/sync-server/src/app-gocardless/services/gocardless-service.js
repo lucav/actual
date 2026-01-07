@@ -322,10 +322,10 @@ export const goCardlessService = {
       institutionId,
       referenceId: uuidv4(),
       accessValidForDays: isSpecialContinuousAccessBank(institutionId)
-        ? 90
+        ? 89
         : institution.max_access_valid_for_days,
       maxHistoricalDays: isSpecialContinuousAccessBank(institutionId)
-        ? 90
+        ? 89
         : institution.transaction_total_days,
       userLanguage: 'en',
       ssn: null,

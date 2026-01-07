@@ -562,7 +562,7 @@ function SingleAutocomplete<T extends AutocompleteItem>({
                     if (e.key === 'Escape') {
                       e.nativeEvent['preventDownshiftDefault'] = true;
 
-                      if (!embedded) {
+                      if (!embedded && isOpen) {
                         e.stopPropagation();
                       }
 
@@ -726,7 +726,7 @@ function MultiAutocomplete<T extends AutocompleteItem>({
       type="single"
       value={null}
       clearOnBlur={clearOnBlur}
-      clearOnSelect={true}
+      clearOnSelect
       suggestions={suggestions.filter(
         item => !selectedItemIds.includes(getItemId(item)),
       )}
