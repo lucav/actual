@@ -1,5 +1,12 @@
 import { useIsTestEnv } from '@desktop-client/hooks/useIsTestEnv';
 
+export const chartTheme = {
+  colors: {
+    blue: 'var(--color-reportsBlue)',
+    red: 'var(--color-reportsRed)',
+  },
+} as const;
+
 export function getColorScale(name: string): string[] {
   const scales: Record<string, string[]> = {
     qualitative: [

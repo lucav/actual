@@ -41,7 +41,7 @@ import { useLocale } from '@desktop-client/hooks/useLocale';
 import { useNavigate } from '@desktop-client/hooks/useNavigate';
 import { useRuleConditionFilters } from '@desktop-client/hooks/useRuleConditionFilters';
 import { useSyncedPref } from '@desktop-client/hooks/useSyncedPref';
-import { useWidget } from '@desktop-client/hooks/useWidget';
+import { useDashboardWidget } from '@desktop-client/hooks/useDashboardWidget';
 import { addNotification } from '@desktop-client/notifications/notificationsSlice';
 import { useDispatch } from '@desktop-client/redux';
 
@@ -53,12 +53,13 @@ export const defaultTimeFrame = {
 
 export function CashFlowForecast() {
   const params = useParams();
-  const { data: widget, isLoading } = useWidget<CashFlowForecastWidget>(
-    params.id ?? '',
-    'cash-flow-card-forecast',
-  );
+  const { data: widget, isPending } =
+    useDashboardWidget<CashFlowForecastWidget>({
+      id: params.id,
+      type: 'cash-flow-card-forecast',
+    });
 
-  if (isLoading) {
+  if (isPending) {
     return <LoadingIndicator />;
   }
 

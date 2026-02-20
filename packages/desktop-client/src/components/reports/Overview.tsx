@@ -790,15 +790,15 @@ export function Overview({ dashboard }: OverviewProps) {
                             onCopyWidget(item.i, targetDashboardId)
                           }
                     />
-                  ) : item.type === 'cash-flow-card-forecast' ? (
+                  ) : widget.type === 'cash-flow-card-forecast' ? (
                     <CashFlowCardForecast
                       widgetId={item.i}
                       isEditing={isEditing}
-                      meta={item.meta}
+                      meta={widget.meta}
                       onMetaChange={newMeta => onMetaChange(item, newMeta)}
                       onRemove={() => onRemoveWidget(item.i)}
                     />
-                  ) : item.type === 'spending-card' ? (
+                  ) : widget.type === 'spending-card' ? (
                     <SpendingCard
                       widgetId={item.i}
                       isEditing={isEditing}
