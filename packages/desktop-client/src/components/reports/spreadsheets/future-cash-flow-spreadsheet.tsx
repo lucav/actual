@@ -4,7 +4,7 @@ import { AlignedText } from '@actual-app/components/aligned-text';
 import * as d from 'date-fns';
 import { round } from 'lodash';
 
-import { send } from 'loot-core/platform/client/fetch';
+import { send } from 'loot-core/platform/client/connection';
 import * as monthUtils from 'loot-core/shared/months';
 import { q } from 'loot-core/shared/query';
 import {
