@@ -1,4 +1,4 @@
-import { type Database, type SqlJsStatic } from '@jlongster/sql.js';
+import type { Database, SqlJsStatic } from '@jlongster/sql.js';
 /// <reference types="emscripten" />
 
 // Types exported from sql.js (and Emscripten) are incomplete, so we need to redefine them here
@@ -51,7 +51,9 @@ export declare function asyncTransaction(
   fn: () => Promise<void>,
 ): Promise<void>;
 
-export declare function openDatabase(pathOrBuffer?: string | Buffer): Database;
+export declare function openDatabase(
+  pathOrBuffer?: string | Buffer,
+): Promise<Database>;
 
 export declare function closeDatabase(db: Database): void;
 
