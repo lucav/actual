@@ -1,5 +1,5 @@
 // @ts-strict-ignore
-import type { SchemaConfig } from '../compiler';
+import type { SchemaConfig } from '#server/aql/compiler';
 
 function f(type: string, opts?: Record<string, unknown>) {
   return { type, ...opts };
@@ -104,6 +104,7 @@ export const schema = {
     next_date: f('date'),
     completed: f('boolean'),
     posts_transaction: f('boolean'),
+    custom_upcoming_length: f('string'),
     tombstone: f('boolean'),
 
     // These are special fields that are actually pulled from the
@@ -196,6 +197,14 @@ export const schema = {
     x: f('integer', { required: true }),
     y: f('integer', { required: true }),
     meta: f('json'),
+    tombstone: f('boolean'),
+  },
+  payee_locations: {
+    id: f('id'),
+    payee_id: f('id', { ref: 'payees', required: true }),
+    latitude: f('float', { required: true }),
+    longitude: f('float', { required: true }),
+    created_at: f('integer', { required: true }),
     tombstone: f('boolean'),
   },
 };

@@ -1,4 +1,4 @@
-import { useIsTestEnv } from '@desktop-client/hooks/useIsTestEnv';
+import { useIsTestEnv } from '#hooks/useIsTestEnv';
 
 export const chartTheme = {
   colors: {

@@ -4,16 +4,17 @@ import type { Preview } from '@storybook/react-vite';
 
 // Not ideal to import from desktop-client, but we need a source of truth for theme variables
 // TODO: this needs refactoring
+// oxlint-disable-next-line actual/enforce-boundaries
 import * as darkTheme from '../../desktop-client/src/style/themes/dark';
-import * as developmentTheme from '../../desktop-client/src/style/themes/development';
+// oxlint-disable-next-line actual/enforce-boundaries
 import * as lightTheme from '../../desktop-client/src/style/themes/light';
+// oxlint-disable-next-line actual/enforce-boundaries
 import * as midnightTheme from '../../desktop-client/src/style/themes/midnight';
 
 const THEMES = {
   light: lightTheme,
   dark: darkTheme,
   midnight: midnightTheme,
-  development: developmentTheme,
 } as const;
 
 type ThemeName = keyof typeof THEMES;
@@ -64,7 +65,6 @@ const preview: Preview = {
           { value: 'light', title: 'Light' },
           { value: 'dark', title: 'Dark' },
           { value: 'midnight', title: 'Midnight' },
-          { value: 'development', title: 'Development' },
         ],
       },
     },

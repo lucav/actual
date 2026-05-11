@@ -21,7 +21,9 @@ jobs:
     # this is so the assets can be added to the release
     permissions:
       contents: write
+    environment: release
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-22.04
@@ -29,7 +31,9 @@ jobs:
           - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - if: ${{ startsWith(matrix.os, 'windows') }}
         run: pip.exe install setuptools
       - if: ${{ ! startsWith(matrix.os, 'windows') }}
@@ -56,9 +60,11 @@ jobs:
 
           METAINFO_FILE="packages/desktop-electron/extra-resources/linux/com.actualbudget.actual.metainfo.xml"
           TODAY=$(date +%Y-%m-%d)
-          VERSION=${{ steps.process_version.outputs.version }}
+          VERSION=${STEPS_PROCESS_VERSION_OUTPUTS_VERSION}
           sed -i "s/%RELEASE_VERSION%/$VERSION/g; s/%RELEASE_DATE%/$TODAY/g" "$METAINFO_FILE"
           flatpak run --command=flatpak-builder-lint org.flatpak.Builder appstream "$METAINFO_FILE"
+        env:
+          STEPS_PROCESS_VERSION_OUTPUTS_VERSION: ${{ steps.process_version.outputs.version }}
       - name: Set up environment
         uses: ./.github/actions/setup
       - name: Build Electron for Mac
@@ -74,7 +80,7 @@ jobs:
         if: ${{ ! startsWith(matrix.os, 'macos') }}
         run: ./bin/package-electron
       - name: Upload Build
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: actual-electron-${{ matrix.os }}
           path: |
@@ -85,13 +91,13 @@ jobs:
             packages/desktop-electron/dist/*.flatpak
       - name: Upload Windows Store Build
         if: ${{ startsWith(matrix.os, 'windows') }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: actual-electron-${{ matrix.os }}-appx
           path: |
             packages/desktop-electron/dist/*.appx
       - name: Add to new release
-        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           draft: true
           body: |
@@ -111,48 +117,7 @@ jobs:
             !packages/desktop-electron/dist/Actual-windows.exe
             packages/desktop-electron/dist/*.AppImage
             packages/desktop-electron/dist/*.flatpak
+            packages/desktop-electron/dist/*.appx
 
     outputs:
       version: ${{ steps.process_version.outputs.version }}
-
-  publish-microsoft-store:
-    needs: build
-    runs-on: windows-latest
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-    steps:
-      - name: Install StoreBroker
-        shell: powershell
-        run: |
-          Install-Module -Name StoreBroker -AcceptLicense -Force -Scope CurrentUser -Verbose
-
-      - name: Download Microsoft Store artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          name: actual-electron-windows-latest-appx
-
-      - name: Submit to Microsoft Store
-        shell: powershell
-        run: |
-          # Disable telemetry
-          $global:SBDisableTelemetry = $true
-
-          # Authenticate against the store
-          $pass = ConvertTo-SecureString -String '${{ secrets.MICROSOFT_STORE_CLIENT_SECRET }}' -AsPlainText -Force
-          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList ${{ secrets.MICROSOFT_STORE_CLIENT_ID }},$pass
-          Set-StoreBrokerAuthentication -TenantId '${{ secrets.MICROSOFT_STORE_TENANT_ID }}' -Credential $cred
-
-          # Zip and create metadata files
-          $artifacts = Get-ChildItem -Path . -Filter *.appx | Select-Object -ExpandProperty FullName
-          New-StoreBrokerConfigFile -Path "$PWD/config.json" -AppId ${{ secrets.MICROSOFT_STORE_PRODUCT_ID }}
-          New-SubmissionPackage -ConfigPath "$PWD/config.json" -DisableAutoPackageNameFormatting -AppxPath $artifacts -OutPath "$PWD" -OutName submission
-
-          # Submit the app
-          # See https://github.com/microsoft/StoreBroker/blob/master/Documentation/USAGE.md#the-easy-way
-          Update-ApplicationSubmission `
-            -AppId ${{ secrets.MICROSOFT_STORE_PRODUCT_ID }} `
-            -SubmissionDataPath "submission.json" `
-            -PackagePath "submission.zip" `
-            -ReplacePackages `
-            -NoStatus `
-            -AutoCommit `
-            -Force

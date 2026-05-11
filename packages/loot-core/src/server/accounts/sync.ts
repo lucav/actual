@@ -2,37 +2,37 @@
 import * as dateFns from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import * as asyncStorage from '../../platform/server/asyncStorage';
-import { logger } from '../../platform/server/log';
-import * as monthUtils from '../../shared/months';
-import { q } from '../../shared/query';
+import * as asyncStorage from '#platform/server/asyncStorage';
+import { logger } from '#platform/server/log';
+import { aqlQuery } from '#server/aql';
+import * as db from '#server/db';
+import { TRANSACTION_SORT_INCREMENT } from '#server/db/sort';
+import { runMutator } from '#server/mutators';
+import { post } from '#server/post';
+import { getServer } from '#server/server-config';
+import { batchMessages } from '#server/sync';
+import { batchUpdateTransactions } from '#server/transactions';
+import { runRules } from '#server/transactions/transaction-rules';
+import {
+  defaultMappings,
+  mappingsFromString,
+} from '#server/util/custom-sync-mapping';
+import * as monthUtils from '#shared/months';
+import { q } from '#shared/query';
 import {
   makeChild as makeChildTransaction,
   recalculateSplit,
-} from '../../shared/transactions';
+} from '#shared/transactions';
 import {
   amountToInteger,
   hasFieldsChanged,
   integerToAmount,
-} from '../../shared/util';
+} from '#shared/util';
 import type {
   AccountEntity,
   BankSyncResponse,
-  SimpleFinBatchSyncResponse,
   TransactionEntity,
-} from '../../types/models';
-import { aqlQuery } from '../aql';
-import * as db from '../db';
-import { runMutator } from '../mutators';
-import { post } from '../post';
-import { getServer } from '../server-config';
-import { batchMessages } from '../sync';
-import { batchUpdateTransactions } from '../transactions';
-import { runRules } from '../transactions/transaction-rules';
-import {
-  defaultMappings,
-  mappingsFromString,
-} from '../util/custom-sync-mapping';
+} from '#types/models';
 
 import { getStartingBalancePayee } from './payees';
 import { title } from './title';
@@ -68,10 +68,7 @@ function getAccountBalance(account) {
 }
 
 async function updateAccountBalance(id: AccountEntity['id'], balance: number) {
-  db.runQuery('UPDATE accounts SET balance_current = ? WHERE id = ?', [
-    balance,
-    id,
-  ]);
+  await db.update('accounts', { id, balance_current: balance });
 }
 
 async function getAccountOldestTransaction(id): Promise<TransactionEntity> {
@@ -226,12 +223,12 @@ async function downloadSimpleFinTransactions(
 
   let retVal = {};
   if (batchSync) {
-    for (const [accountId, data] of Object.entries(
-      res as SimpleFinBatchSyncResponse,
-    )) {
+    const batchErrors = res.errors;
+    for (const accountId of Object.keys(res)) {
       if (accountId === 'errors') continue;
 
-      const error = res?.errors?.[accountId]?.[0];
+      const data = res[accountId];
+      const error = batchErrors?.[accountId]?.[0];
 
       retVal[accountId] = {
         transactions: data?.transactions?.all,
@@ -244,12 +241,31 @@ async function downloadSimpleFinTransactions(
         retVal[accountId].error_code = error.error_code;
       }
     }
+
+    // Add entries for accounts that only have errors (no data in the response)
+    if (batchErrors) {
+      for (const [accountId, errorList] of Object.entries(batchErrors)) {
+        if (
+          !retVal[accountId] &&
+          Array.isArray(errorList) &&
+          errorList.length > 0
+        ) {
+          const error = errorList[0];
+          retVal[accountId] = {
+            transactions: [],
+            accountBalance: [],
+            startingBalance: 0,
+            error_type: error.error_type,
+            error_code: error.error_code,
+          };
+        }
+      }
+    }
   } else {
-    const singleRes = res as BankSyncResponse;
     retVal = {
-      transactions: singleRes.transactions.all,
-      accountBalance: singleRes.balances,
-      startingBalance: singleRes.startingBalance,
+      transactions: res.transactions.all,
+      accountBalance: res.balances,
+      startingBalance: res.startingBalance,
     };
   }
 
@@ -489,6 +505,7 @@ export async function reconcileTransactions(
   isPreview = false,
   defaultCleared = true,
   updateDates = false,
+  reimportDeleted?: boolean,
 ): Promise<ReconcileTransactionsResult> {
   logger.log('Performing transaction reconciliation');
 
@@ -507,6 +524,7 @@ export async function reconcileTransactions(
     transactions,
     isBankSyncAccount,
     strictIdChecking,
+    reimportDeleted,
   );
 
   // Finally, generate & commit the changes
@@ -615,7 +633,7 @@ export async function reconcileTransactions(
   // Maintain the sort order of the server
   const now = Date.now();
   added.forEach((t, index) => {
-    t.sort_order ??= now - index;
+    t.sort_order ??= now - index * TRANSACTION_SORT_INCREMENT;
   });
 
   if (!isPreview) {
@@ -644,14 +662,18 @@ export async function matchTransactions(
   transactions,
   isBankSyncAccount = false,
   strictIdChecking = true,
+  reimportDeletedOverride?: boolean,
 ) {
   logger.log('Performing transaction reconciliation matching');
 
-  const reimportDeleted = await aqlQuery(
-    q('preferences')
-      .filter({ id: `sync-reimport-deleted-${acctId}` })
-      .select('value'),
-  ).then(data => String(data?.data?.[0]?.value ?? 'true') === 'true');
+  const reimportDeleted =
+    reimportDeletedOverride !== undefined
+      ? reimportDeletedOverride
+      : await aqlQuery(
+          q('preferences')
+            .filter({ id: `sync-reimport-deleted-${acctId}` })
+            .select('value'),
+        ).then(data => String(data?.data?.[0]?.value ?? 'true') === 'true');
 
   const hasMatched = new Set();
 
@@ -879,6 +901,14 @@ export async function addTransactions(
 
   await createNewPayees(payeesToCreate, added);
 
+  // Assign decreasing sort_order values to preserve import file order.
+  // Transactions are displayed in sort_order DESC order, so first transaction
+  // in the file should have the highest sort_order.
+  const now = Date.now();
+  added.forEach((t, index) => {
+    t.sort_order ??= now - index * TRANSACTION_SORT_INCREMENT;
+  });
+
   let newTransactions;
   if (runTransfers || learnCategories) {
     const res = await batchUpdateTransactions({
@@ -1074,10 +1104,33 @@ export async function simpleFinBatchSync(
     startDates,
   );
 
+  if (!res) {
+    return accounts.map(account => ({
+      accountId: account.id,
+      res: {
+        error_type: 'NO_DATA',
+        error_code: 'NO_DATA',
+      },
+    }));
+  }
+
   const promises = [];
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
     const download = res[account.account_id];
+
+    if (!download || Object.keys(download).length === 0) {
+      promises.push(
+        Promise.resolve({
+          accountId: account.id,
+          res: {
+            error_type: 'ACCOUNT_MISSING',
+            error_code: 'ACCOUNT_MISSING',
+          },
+        }),
+      );
+      continue;
+    }
 
     const acctRow = await db.select('accounts', account.id);
     const oldestTransaction = await getAccountOldestTransaction(account.id);
@@ -1094,13 +1147,32 @@ export async function simpleFinBatchSync(
       continue;
     }
 
+    if (!download.transactions) {
+      promises.push(
+        Promise.resolve({
+          accountId: account.id,
+          res: {
+            error_type: 'ACCOUNT_MISSING',
+            error_code: 'ACCOUNT_MISSING',
+          },
+        }),
+      );
+      continue;
+    }
+
     promises.push(
-      processBankSyncDownload(download, account.id, acctRow, newAccount).then(
-        res => ({
+      processBankSyncDownload(download, account.id, acctRow, newAccount)
+        .then(res => ({
           accountId: account.id,
           res,
-        }),
-      ),
+        }))
+        .catch(err => ({
+          accountId: account.id,
+          res: {
+            error_type: err?.category || 'INTERNAL_ERROR',
+            error_code: err?.code || 'INTERNAL_ERROR',
+          },
+        })),
     );
   }
 

@@ -5,34 +5,30 @@
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,
+    "strict": false, // TODO: fix issues and remove this
     "emitDeclarationOnly": true,
     "outDir": "build/ts",
-    "rootDir": "src",
+    "rootDir": ".",
     "tsBuildInfoFile": "build/ts/.tsbuildinfo",
-    "paths": {
-      // TODO: move to subpath imports
-      "@desktop-client/*": ["./src/*"]
-    },
-    "plugins": [{ "name": "typescript-strict-plugin", "paths": ["."] }]
+    "customConditions": ["electron-renderer"],
+    "plugins": [
+      {
+        "name": "typescript-strict-plugin",
+        "paths": ["."]
+      }
+    ]
   },
   "references": [
-    { "path": "../loot-core" },
-    { "path": "../component-library" }
+    {
+      "path": "../component-library"
+    },
+    {
+      "path": "../loot-core"
+    },
+    {
+      "path": "../plugins-service"
+    }
   ],
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.js",
-    // TODO: remove loot-core dependency
-    "../../packages/loot-core/typings/window.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "build",
-    "**/service-worker/**",
-    "e2e",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/setupTests.ts"
-  ]
+  "include": ["**/*.ts", "src/**/*.tsx", "src/**/*.js"],
+  "exclude": ["node_modules", "build", "**/service-worker/**", "e2e"]
 }

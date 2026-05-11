@@ -1,13 +1,29 @@
 // @ts-strict-ignore
 import * as d from 'date-fns';
-import deepEqual from 'deep-equal';
 import { v4 as uuidv4 } from 'uuid';
 
-import { captureBreadcrumb } from '../../platform/exceptions';
-import * as connection from '../../platform/server/connection';
-import { logger } from '../../platform/server/log';
-import { currentDay, dayFromDate, parseDate } from '../../shared/months';
-import { q } from '../../shared/query';
+import { captureBreadcrumb } from '#platform/exceptions';
+import * as connection from '#platform/server/connection';
+import { logger } from '#platform/server/log';
+import { addTransactions } from '#server/accounts/sync';
+import { createApp } from '#server/app';
+import { aqlQuery } from '#server/aql';
+import * as db from '#server/db';
+import { toDateRepr } from '#server/models';
+import { mutator, runMutator } from '#server/mutators';
+import * as prefs from '#server/prefs';
+import { Rule } from '#server/rules';
+import { addSyncListener, batchMessages } from '#server/sync';
+import {
+  getRules,
+  insertRule,
+  ruleModel,
+  updateRule,
+} from '#server/transactions/transaction-rules';
+import { undoable } from '#server/undo';
+import { RSchedule } from '#server/util/rschedule';
+import { currentDay, dayFromDate, parseDate } from '#shared/months';
+import { q } from '#shared/query';
 import {
   extractScheduleConds,
   getDateWithSkippedWeekend,
@@ -16,25 +32,8 @@ import {
   getScheduledAmount,
   getStatus,
   recurConfigToRSchedule,
-} from '../../shared/schedules';
-import type { ScheduleEntity } from '../../types/models';
-import { addTransactions } from '../accounts/sync';
-import { createApp } from '../app';
-import { aqlQuery } from '../aql';
-import * as db from '../db';
-import { toDateRepr } from '../models';
-import { mutator, runMutator } from '../mutators';
-import * as prefs from '../prefs';
-import { Rule } from '../rules';
-import { addSyncListener, batchMessages } from '../sync';
-import {
-  getRules,
-  insertRule,
-  ruleModel,
-  updateRule,
-} from '../transactions/transaction-rules';
-import { undoable } from '../undo';
-import { RSchedule } from '../util/rschedule';
+} from '#shared/schedules';
+import type { RuleConditionEntity, ScheduleEntity } from '#types/models';
 
 import { findSchedules } from './find-schedules';
 
@@ -46,6 +45,57 @@ function zip(arr1, arr2) {
     result.push([arr1[i], arr2[i]]);
   }
   return result;
+}
+
+export function areConditionValuesEqual(left, right) {
+  if (left === right) {
+    return true;
+  }
+
+  if (left == null || right == null) {
+    return left === right;
+  }
+
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => areConditionValuesEqual(value, right[index]))
+    );
+  }
+
+  if (typeof left === 'object' && typeof right === 'object') {
+    const leftKeys = Object.keys(left).sort();
+    const rightKeys = Object.keys(right).sort();
+
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every((key, index) => {
+        const rightKey = rightKeys[index];
+        return (
+          key === rightKey &&
+          areConditionValuesEqual(left[key], right[rightKey])
+        );
+      })
+    );
+  }
+
+  return false;
+}
+
+function areScheduleConditionsEqual(
+  left?: RuleConditionEntity,
+  right?: RuleConditionEntity,
+) {
+  if (left == null || right == null) {
+    return left === right;
+  }
+
+  const { type: _leftType, ...leftCondition } = left;
+  const { type: _rightType, ...rightCondition } = right;
+
+  return areConditionValuesEqual(leftCondition, rightCondition);
 }
 
 export function updateConditions(conditions, newConditions) {
@@ -156,7 +206,7 @@ export async function setNextDate({
       start ? start(nextDate) : new Date(),
     );
 
-    if (newNextDate !== nextDate) {
+    if (newNextDate != null && newNextDate !== nextDate) {
       // Our `update` functon requires the id of the item and we don't
       // have it, so we need to query it
       const nd = await db.first<
@@ -260,8 +310,8 @@ export async function updateSchedule({
   conditions,
   resetNextDate,
 }: {
-  schedule;
-  conditions?;
+  schedule: Partial<ScheduleEntity> & Pick<ScheduleEntity, 'id'>;
+  conditions?: RuleConditionEntity[];
   resetNextDate?: boolean;
 }) {
   if (schedule.rule) {
@@ -306,11 +356,11 @@ export async function updateSchedule({
       // might switch accounts from a closed one
       if (
         resetNextDate ||
-        !deepEqual(
+        !areScheduleConditionsEqual(
           oldConditions.find(c => c.field === 'account'),
-          oldConditions.find(c => c.field === 'account'),
+          newConditions.find(c => c.field === 'account'),
         ) ||
-        !deepEqual(
+        !areConditionValuesEqual(
           stripType(oldConditions.find(c => c.field === 'date') || {}),
           stripType(newConditions.find(c => c.field === 'date') || {}),
         )
@@ -490,7 +540,7 @@ async function advanceSchedulesService(syncSuccess) {
       schedule.next_date,
       schedule.completed,
       hasTrans.has(schedule.id),
-      upcomingLength[0]?.value ?? '7',
+      schedule.custom_upcoming_length ?? upcomingLength[0]?.value ?? '7',
     );
 
     if (status === 'paid') {
@@ -588,7 +638,11 @@ app.events.on('sync', ({ type }) => {
     if (lastScheduleRun !== currentDay()) {
       void runMutator(() => advanceSchedulesService(type === 'success'));
 
-      void prefs.savePrefs({ lastScheduleRun: currentDay() });
+      // Only mark the day as done when sync succeeded, so that
+      // schedule auto-posting is retried on subsequent successful syncs
+      if (type === 'success') {
+        void prefs.savePrefs({ lastScheduleRun: currentDay() });
+      }
     }
   }
 });

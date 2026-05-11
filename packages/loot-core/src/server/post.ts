@@ -1,7 +1,7 @@
 // @ts-strict-ignore
-import { fetch } from '../platform/server/fetch';
-import { logger } from '../platform/server/log';
-import * as Platform from '../shared/platform';
+import { fetch } from '#platform/server/fetch';
+import { logger } from '#platform/server/log';
+import * as Platform from '#shared/platform';
 
 import { PostError } from './errors';
 
@@ -11,7 +11,7 @@ function throwIfNot200(res: Response, text: string) {
       throw new PostError(res.status === 500 ? 'internal' : text);
     }
 
-    const contentType = res.headers.get('Content-Type');
+    const contentType = res.headers.get('Content-Type') ?? '';
     if (contentType.toLowerCase().indexOf('application/json') !== -1) {
       const json = JSON.parse(text);
       throw new PostError(json.reason);

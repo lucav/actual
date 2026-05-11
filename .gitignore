@@ -42,6 +42,9 @@ bundle.desktop.js.map
 bundle.mobile.js
 bundle.mobile.js.map
 
+# Python virtualenv (Electron CI provisions one at the repo root for setuptools)
+.venv/
+
 # Yarn
 .pnp.*
 .yarn/*
@@ -57,6 +60,10 @@ bundle.mobile.js.map
 
 # IntelliJ IDEA
 .idea
+
+# Claude Code
+.claude/worktrees/*
+.claude/settings.local.json
 
 # Misc
 .#*
@@ -81,3 +88,10 @@ build/
 
 *storybook.log
 storybook-static
+
+# cli config when testing locally
+.actualrc.json
+.actualrc
+.actualrc.yaml
+.actualrc.yml
+actual.config.js

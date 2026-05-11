@@ -1,5 +1,5 @@
-import type { Template } from '../../types/models/templates';
-import * as db from '../db';
+import * as db from '#server/db';
+import type { Template } from '#types/models/templates';
 
 import { parse } from './goal-template.pegjs';
 import {
@@ -14,7 +14,7 @@ import {
   unparse,
 } from './template-notes';
 
-vi.mock('../db');
+vi.mock('#server/db');
 vi.mock('./statements');
 
 function mockGetTemplateNotesForCategories(
@@ -291,6 +291,7 @@ function mockSchedules(): db.DbSchedule[] {
       posts_transaction: 0,
       tombstone: 0,
       name: 'Mock Schedule 1',
+      custom_upcoming_length: null,
     },
     {
       id: 'mock-schedule-2',
@@ -300,6 +301,7 @@ function mockSchedules(): db.DbSchedule[] {
       posts_transaction: 0,
       tombstone: 0,
       name: 'Mock Schedule 2',
+      custom_upcoming_length: null,
     },
   ];
 }
@@ -324,6 +326,7 @@ describe('unparse/parse round-trip', () => {
     '#template 200 repeat every 2 months starting 2025-06-01',
     '#template 300 repeat every week starting 2025-01-07',
     '#template 400 repeat every year starting 2025-01-01 up to 50',
+    '#template 100 repeat every 1 months starting 2026-04-01',
     // by / spend
     '#template 500 by 2025-12',
     '#template 600 by 2025-11 repeat every month',

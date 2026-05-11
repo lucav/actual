@@ -1,14 +1,29 @@
 import { t } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 
-import { captureException } from '../../platform/exceptions';
-import * as asyncStorage from '../../platform/server/asyncStorage';
-import * as connection from '../../platform/server/connection';
-import { logger } from '../../platform/server/log';
-import { isNonProductionEnvironment } from '../../shared/environment';
-import { dayFromDate } from '../../shared/months';
-import * as monthUtils from '../../shared/months';
-import { amountToInteger } from '../../shared/util';
+import { captureException } from '#platform/exceptions';
+import * as asyncStorage from '#platform/server/asyncStorage';
+import * as connection from '#platform/server/connection';
+import { logger } from '#platform/server/log';
+import { createApp } from '#server/app';
+import * as db from '#server/db';
+import {
+  APIError,
+  BankSyncError,
+  PostError,
+  TransactionError,
+} from '#server/errors';
+import { app as mainApp } from '#server/main-app';
+import { mutator } from '#server/mutators';
+import { get, post } from '#server/post';
+import { getServer } from '#server/server-config';
+import { batchMessages } from '#server/sync';
+import { undoable, withUndo } from '#server/undo';
+import { isNonProductionEnvironment } from '#shared/environment';
+import { dayFromDate } from '#shared/months';
+import * as monthUtils from '#shared/months';
+import { amountToInteger } from '#shared/util';
+import type { ImportTransactionsOpts } from '#types/api-handlers';
 import type {
   AccountEntity,
   CategoryEntity,
@@ -18,21 +33,7 @@ import type {
   SyncServerPluggyAiAccount,
   SyncServerSimpleFinAccount,
   TransactionEntity,
-} from '../../types/models';
-import { createApp } from '../app';
-import * as db from '../db';
-import {
-  APIError,
-  BankSyncError,
-  PostError,
-  TransactionError,
-} from '../errors';
-import { app as mainApp } from '../main-app';
-import { mutator } from '../mutators';
-import { get, post } from '../post';
-import { getServer } from '../server-config';
-import { batchMessages } from '../sync';
-import { undoable, withUndo } from '../undo';
+} from '#types/models';
 
 import * as link from './link';
 import { getStartingBalancePayee } from './payees';
@@ -195,7 +196,7 @@ async function linkGoCardlessAccount({
     });
   }
 
-  await bankSync.syncAccount(
+  const syncRes = await bankSync.syncAccount(
     undefined,
     undefined,
     id,
@@ -204,6 +205,8 @@ async function linkGoCardlessAccount({
     startingDate,
     startingBalance,
   );
+
+  await handleSyncResponse(syncRes, id);
 
   connection.send('sync-event', {
     type: 'success',
@@ -267,7 +270,7 @@ async function linkSimpleFinAccount({
     });
   }
 
-  await bankSync.syncAccount(
+  const syncRes = await bankSync.syncAccount(
     undefined,
     undefined,
     id,
@@ -276,6 +279,8 @@ async function linkSimpleFinAccount({
     startingDate,
     startingBalance,
   );
+
+  await handleSyncResponse(syncRes, id);
 
   connection.send('sync-event', {
     type: 'success',
@@ -339,7 +344,7 @@ async function linkPluggyAiAccount({
     });
   }
 
-  await bankSync.syncAccount(
+  const syncRes = await bankSync.syncAccount(
     undefined,
     undefined,
     id,
@@ -348,6 +353,8 @@ async function linkPluggyAiAccount({
     startingDate,
     startingBalance,
   );
+
+  await handleSyncResponse(syncRes, id);
 
   connection.send('sync-event', {
     type: 'success',
@@ -844,7 +851,7 @@ async function handleSyncResponse(
     added: Array<TransactionEntity['id']>;
     updated: Array<TransactionEntity['id']>;
   },
-  acct: db.DbAccount,
+  acctId: string,
 ): Promise<SyncResponse> {
   const { added, updated } = res;
   const newTransactions: Array<TransactionEntity['id']> = [];
@@ -855,11 +862,11 @@ async function handleSyncResponse(
   matchedTransactions.push(...updated);
 
   if (added.length > 0) {
-    updatedAccounts.push(acct.id);
+    updatedAccounts.push(acctId);
   }
 
   const ts = new Date().getTime().toString();
-  await db.update('accounts', { id: acct.id, last_sync: ts });
+  await db.update('accounts', { id: acctId, last_sync: ts });
 
   return {
     newTransactions,
@@ -981,7 +988,10 @@ async function accountsBankSync({
           acct.bankId,
         );
 
-        const syncResponseData = await handleSyncResponse(syncResponse, acct);
+        const syncResponseData = await handleSyncResponse(
+          syncResponse,
+          acct.id,
+        );
 
         newTransactions.push(...syncResponseData.newTransactions);
         matchedTransactions.push(...syncResponseData.matchedTransactions);
@@ -1069,7 +1079,7 @@ async function simpleFinBatchSync({
       const matchedTransactions: Array<TransactionEntity['id']> = [];
       const updatedAccounts: Array<AccountEntity['id']> = [];
 
-      if (syncResponse.res.error_code) {
+      if (syncResponse.res?.error_code) {
         errors.push(
           handleSyncError(
             {
@@ -1081,15 +1091,24 @@ async function simpleFinBatchSync({
             account,
           ),
         );
-      } else {
+      } else if (syncResponse.res) {
         const syncResponseData = await handleSyncResponse(
           syncResponse.res,
-          account,
+          account.id,
         );
 
         newTransactions.push(...syncResponseData.newTransactions);
         matchedTransactions.push(...syncResponseData.matchedTransactions);
         updatedAccounts.push(...syncResponseData.updatedAccounts);
+      } else {
+        errors.push(
+          handleSyncError(
+            new Error(
+              'Failed syncing account "' + account.name + '": empty response',
+            ),
+            account,
+          ),
+        );
       }
 
       retVal.push({
@@ -1098,19 +1117,17 @@ async function simpleFinBatchSync({
       });
     }
   } catch (err) {
-    const errors = [];
     for (const account of accounts) {
+      const error = err as Error;
       retVal.push({
         accountId: account.id,
         res: {
-          errors,
+          errors: [handleSyncError(error, account)],
           newTransactions: [],
           matchedTransactions: [],
           updatedAccounts: [],
         },
       });
-      const error = err as Error;
-      errors.push(handleSyncError(error, account));
     }
   }
 
@@ -1141,9 +1158,7 @@ async function importTransactions({
   accountId: AccountEntity['id'];
   transactions: ImportTransactionEntity[];
   isPreview: boolean;
-  opts?: {
-    defaultCleared?: boolean;
-  };
+  opts?: ImportTransactionsOpts;
 }): Promise<ImportTransactionsResult> {
   if (typeof accountId !== 'string') {
     throw APIError('transactions-import: accountId must be an id');
@@ -1157,6 +1172,8 @@ async function importTransactions({
       true,
       isPreview,
       opts?.defaultCleared,
+      false,
+      opts?.reimportDeleted,
     );
     return {
       errors: [],
