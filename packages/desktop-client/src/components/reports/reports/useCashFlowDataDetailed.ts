@@ -1,16 +1,38 @@
 // @ts-strict-ignore
 
-import { useMemo } from 'react';
+import { useMemo, type JSX } from 'react';
 
 import * as d from 'date-fns';
 
-import { type RuleConditionEntity } from 'loot-core/types/models';
+import { type RuleConditionEntity } from '@actual-app/core/types/models';
 
-import { cashFlowByDate } from '@desktop-client/components/reports/spreadsheets/cash-flow-spreadsheet';
-import { futureCashFlowByDate } from '@desktop-client/components/reports/spreadsheets/future-cash-flow-spreadsheet';
-import { useReport } from '@desktop-client/components/reports/useReport';
-import { useFormat } from '@desktop-client/hooks/useFormat';
-import { useLocale } from '@desktop-client/hooks/useLocale';
+import { cashFlowByDate } from '#components/reports/spreadsheets/cash-flow-spreadsheet';
+import { useReport } from '#components/reports/useReport';
+import { useFormat } from '#hooks/useFormat';
+import { useLocale } from '#hooks/useLocale';
+
+import { futureCashFlowByDate } from '../spreadsheets/future-cash-flow-spreadsheet';
+
+export type CashFlowData = {
+  graphData: {
+    expenses: Array<{ x: Date; y: number }>;
+    income: Array<{ x: Date; y: number }>;
+    transfers: Array<{ x: Date; y: number }>;
+    balances: Array<{
+      x: Date;
+      y: number;
+      premadeLabel: JSX.Element;
+      amount: number;
+    }>;
+  };
+  balance: number;
+  totalExpenses: number;
+  totalIncome: number;
+  totalTransfers: number;
+  totalChange: number;
+};
+
+type CashFlowReportLoader = Parameters<typeof useReport<CashFlowData>>[1];
 
 export const useCashFlowDataDetailed = (
   startMonth: string,
@@ -21,7 +43,7 @@ export const useCashFlowDataDetailed = (
 ) => {
   const locale = useLocale();
   const format = useFormat();
-  const paramsDetailed = useMemo(() => {
+  const paramsDetailed = useMemo<CashFlowReportLoader>(() => {
     const today = new Date();
     return d.isAfter(new Date(endMonth), today)
       ? futureCashFlowByDate(
@@ -50,5 +72,5 @@ export const useCashFlowDataDetailed = (
     format,
   ]);
 
-  return useReport('cash_flow', paramsDetailed);
+  return useReport<CashFlowData>('cash_flow', paramsDetailed);
 };

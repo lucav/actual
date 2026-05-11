@@ -26,6 +26,7 @@ import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardSelector } from './DashboardSelector';
 import { LoadingIndicator } from './LoadingIndicator';
+import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
 import { BudgetAnalysisCard } from './reports/BudgetAnalysisCard';
 import { CalendarCard } from './reports/CalendarCard';
 import { CashFlowCard } from './reports/CashFlowCard';
@@ -34,7 +35,9 @@ import { CrossoverCard } from './reports/CrossoverCard';
 import { CustomReportListCards } from './reports/CustomReportListCards';
 import { FormulaCard } from './reports/FormulaCard';
 import { MarkdownCard } from './reports/MarkdownCard';
+import { MissingReportCard } from './reports/MissingReportCard';
 import { NetWorthCard } from './reports/NetWorthCard';
+import { SankeyCard } from './reports/SankeyCard';
 import { SpendingCard } from './reports/SpendingCard';
 import './overview.scss';
 import { SummaryCard } from './reports/SummaryCard';
@@ -67,25 +70,6 @@ import {
   useUpdateDashboardWidgetMutation,
   useUpdateDashboardWidgetsMutation,
 } from '#reports/mutations';
-
-import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
-import { DashboardHeader } from './DashboardHeader';
-import './overview.scss';
-import { DashboardSelector } from './DashboardSelector';
-import { LoadingIndicator } from './LoadingIndicator';
-import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
-import { BudgetAnalysisCard } from './reports/BudgetAnalysisCard';
-import { CalendarCard } from './reports/CalendarCard';
-import { CashFlowCard } from './reports/CashFlowCard';
-import { CrossoverCard } from './reports/CrossoverCard';
-import { CustomReportListCards } from './reports/CustomReportListCards';
-import { FormulaCard } from './reports/FormulaCard';
-import { MarkdownCard } from './reports/MarkdownCard';
-import { MissingReportCard } from './reports/MissingReportCard';
-import { NetWorthCard } from './reports/NetWorthCard';
-import { SankeyCard } from './reports/SankeyCard';
-import { SpendingCard } from './reports/SpendingCard';
-import { SummaryCard } from './reports/SummaryCard';
 
 function isCustomReportWidget(
   widget: DashboardWidgetEntity,

@@ -6,13 +6,12 @@ import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
+import { integerToCurrency } from '@actual-app/core/shared/util';
 import { type TFunction } from 'i18next';
 import { Bar, BarChart, LabelList } from 'recharts';
 
-import { integerToCurrency } from 'loot-core/shared/util';
-
-import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
-import { chartTheme } from '@desktop-client/components/reports/chart-theme';
+import { PrivacyFilter } from '#components/PrivacyFilter';
+import { chartTheme } from '#components/reports/chart-theme';
 
 export const renderCashFlowCardChartCondensed = (
   width: number,

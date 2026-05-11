@@ -1,7 +1,7 @@
 // @ts-strict-ignore
 import React, { type CSSProperties } from 'react';
 
-import { FutureCashFlowGraph } from '@desktop-client/components/reports/graphs/FutureCashFlowGraph';
+import { FutureCashFlowGraph } from '#components/reports/graphs/FutureCashFlowGraph';
 
 export const renderCashFlowCardChartDetailed = (
   graphData: {

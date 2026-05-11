@@ -1,22 +1,21 @@
 import React, { type JSX } from 'react';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
-import * as d from 'date-fns';
-import { round } from 'lodash';
-
-import { send } from 'loot-core/platform/client/connection';
-import * as monthUtils from 'loot-core/shared/months';
-import { q } from 'loot-core/shared/query';
+import { send } from '@actual-app/core/platform/client/connection';
+import * as monthUtils from '@actual-app/core/shared/months';
+import { q } from '@actual-app/core/shared/query';
 import {
   integerToCurrency,
   integerToAmount,
   toRelaxedNumber,
   getNumberFormat,
-} from 'loot-core/shared/util';
-import { type RuleConditionEntity } from 'loot-core/types/models';
+} from '@actual-app/core/shared/util';
+import { type RuleConditionEntity } from '@actual-app/core/types/models';
+import * as d from 'date-fns';
+import { round } from 'lodash';
 
-import { runAll, indexCashFlow } from '@desktop-client/components/reports/util';
-import { type useSpreadsheet } from '@desktop-client/hooks/useSpreadsheet';
+import { runAll, indexCashFlow } from '#components/reports/util';
+import { type useSpreadsheet } from '#hooks/useSpreadsheet';
 
 export function simpleCashFlow(
   startMonth: string,

@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 
 import { AlignedText } from '@actual-app/components/aligned-text';
 import { theme } from '@actual-app/components/theme';
+import { firstDayOfMonth } from '@actual-app/core/shared/months';
+import {
+  amountToCurrency,
+  amountToCurrencyNoDecimal,
+} from '@actual-app/core/shared/util';
 import { css } from '@emotion/css';
 import * as d from 'date-fns';
 import {
@@ -17,15 +22,9 @@ import {
   YAxis,
 } from 'recharts';
 
-import { firstDayOfMonth } from 'loot-core/shared/months';
-import {
-  amountToCurrency,
-  amountToCurrencyNoDecimal,
-} from 'loot-core/shared/util';
-
-import { chartTheme } from '@desktop-client/components/reports/chart-theme';
-import { Container } from '@desktop-client/components/reports/Container';
-import { usePrivacyMode } from '@desktop-client/hooks/usePrivacyMode';
+import { chartTheme } from '#components/reports/chart-theme';
+import { Container } from '#components/reports/Container';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 
 const MAX_BAR_SIZE = 50;
 const ANIMATION_DURATION = 1000; // in ms

@@ -148,6 +148,10 @@ export function CashFlowGraph({
   const animationProps = useRechartsAnimation({
     animationDuration: ANIMATION_DURATION,
   });
+  const lineAnimationProps = useRechartsAnimation({
+    animationDuration: ANIMATION_DURATION,
+    isAnimationActive: false,
+  });
 
   const data = graphData.expenses.map((row, idx) => ({
     date: row.x,
@@ -218,7 +222,6 @@ export function CashFlowGraph({
 
             <Line
               type="monotone"
-              isAnimationActive={false}
               data={data}
               dataKey="balance"
               strokeDasharray="none"
@@ -226,7 +229,7 @@ export function CashFlowGraph({
               hide={!showBalance}
               stroke={theme.pageTextLight}
               strokeWidth={2}
-            {...animationProps}
+              {...lineAnimationProps}
             />
           </ComposedChart>
       )}

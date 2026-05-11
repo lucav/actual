@@ -2,10 +2,9 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { View } from '@actual-app/components/view';
+import { type CashFlowForecastWidget } from '@actual-app/core/types/models';
 import * as d from 'date-fns';
 import { ResponsiveContainer } from 'recharts';
-
-import { type CashFlowForecastWidget } from 'loot-core/types/models';
 
 import { defaultTimeFrame } from './CashFlowForecast';
 import { renderCashFlowCardChartCondensed } from './renderCashFlowCardChartCondensed';
@@ -14,14 +13,14 @@ import { renderCashFlowCardViewCondensed } from './renderCashFlowCardViewCondens
 import { renderCashFlowCardViewDetailed } from './renderCashFlowCardViewDetailed';
 import { useCashFlowDataDetailed } from './useCashFlowDataDetailed';
 
-import { Container } from '@desktop-client/components/reports/Container';
-import { DateRange } from '@desktop-client/components/reports/DateRange';
-import { LoadingIndicator } from '@desktop-client/components/reports/LoadingIndicator';
-import { ReportCard } from '@desktop-client/components/reports/ReportCard';
-import { ReportCardName } from '@desktop-client/components/reports/ReportCardName';
-import { calculateTimeRange } from '@desktop-client/components/reports/reportRanges';
-import { simpleCashFlow } from '@desktop-client/components/reports/spreadsheets/cash-flow-spreadsheet';
-import { useReport } from '@desktop-client/components/reports/useReport';
+import { Container } from '#components/reports/Container';
+import { DateRange } from '#components/reports/DateRange';
+import { LoadingIndicator } from '#components/reports/LoadingIndicator';
+import { ReportCard } from '#components/reports/ReportCard';
+import { ReportCardName } from '#components/reports/ReportCardName';
+import { calculateTimeRange } from '#components/reports/reportRanges';
+import { simpleCashFlow } from '#components/reports/spreadsheets/cash-flow-spreadsheet';
+import { useReport } from '#components/reports/useReport';
 
 type CashFlowCardForecastProps = {
   widgetId: string;
