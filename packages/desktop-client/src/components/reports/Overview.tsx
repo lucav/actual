@@ -71,10 +71,50 @@ import {
   useUpdateDashboardWidgetsMutation,
 } from '#reports/mutations';
 
+import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
+import { DashboardHeader } from './DashboardHeader';
+import './overview.scss';
+import { DashboardSelector } from './DashboardSelector';
+import { LoadingIndicator } from './LoadingIndicator';
+import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
+import { BalanceForecastCard } from './reports/BalanceForecastCard';
+import { BudgetAnalysisCard } from './reports/BudgetAnalysisCard';
+import { CalendarCard } from './reports/CalendarCard';
+import { CashFlowCard } from './reports/CashFlowCard';
+import { CrossoverCard } from './reports/CrossoverCard';
+import { CustomReportListCards } from './reports/CustomReportListCards';
+import { FormulaCard } from './reports/FormulaCard';
+import { MarkdownCard } from './reports/MarkdownCard';
+import { MissingReportCard } from './reports/MissingReportCard';
+import { NetWorthCard } from './reports/NetWorthCard';
+import { SankeyCard } from './reports/SankeyCard';
+import { SpendingCard } from './reports/SpendingCard';
+import { SummaryCard } from './reports/SummaryCard';
+
 function isCustomReportWidget(
   widget: DashboardWidgetEntity,
 ): widget is CustomReportWidget {
   return widget.type === 'custom-report';
+}
+
+function getWidgetMinHeight(widget: DashboardWidgetEntity) {
+  if (isCustomReportWidget(widget) || widget.type === 'markdown-card') {
+    return 1;
+  }
+
+  if (widget.type === 'sankey-card') {
+    return 3;
+  }
+
+  return 2;
+}
+
+function getWidgetMinWidth(widget: DashboardWidgetEntity) {
+  if (isCustomReportWidget(widget) || widget.type === 'markdown-card') {
+    return 2;
+  }
+
+  return 3;
 }
 
 type OverviewProps = {
@@ -86,9 +126,9 @@ export function Overview({ dashboard }: OverviewProps) {
   const dispatch = useDispatch();
   const [_firstDayOfWeekIdx] = useSyncedPref('firstDayOfWeekIdx');
   const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
-  const crossoverReportEnabled = useFeatureFlag('crossoverReport');
   const ageOfMoneyReportEnabled = useFeatureFlag('ageOfMoneyReport');
   const budgetAnalysisReportEnabled = useFeatureFlag('budgetAnalysisReport');
+  const balanceForecastReportEnabled = useFeatureFlag('balanceForecastReport');
 
   const formulaMode = useFeatureFlag('formulaMode');
 
@@ -168,10 +208,8 @@ export function Overview({ dashboard }: OverviewProps) {
       y: widget.y,
       w: widget.width,
       h: widget.height,
-      minW:
-        isCustomReportWidget(widget) || widget.type === 'markdown-card' ? 2 : 3,
-      minH:
-        isCustomReportWidget(widget) || widget.type === 'markdown-card' ? 1 : 2,
+      minW: getWidgetMinWidth(widget),
+      minH: getWidgetMinHeight(widget),
     }));
   }, [widgets]);
 
@@ -273,7 +311,7 @@ export function Overview({ dashboard }: OverviewProps) {
       widget: {
         type,
         width: 4,
-        height: 2,
+        height: type === 'sankey-card' ? 3 : 2,
         meta,
         dashboard_page_id: dashboard.id,
       },
@@ -484,6 +522,7 @@ export function Overview({ dashboard }: OverviewProps) {
               style={{
                 padding: '5px',
                 borderBottom: '1px solid ' + theme.pillBorder,
+                backgroundColor: theme.mobilePageBackground,
               }}
             >
               <DashboardSelector
@@ -579,14 +618,10 @@ export function Overview({ dashboard }: OverviewProps) {
                               name: 'net-worth-card' as const,
                               text: t('Net worth graph'),
                             },
-                            ...(crossoverReportEnabled
-                              ? [
                             {
                                     name: 'crossover-card' as const,
                                     text: t('Crossover point'),
                                   },
-                                ]
-                              : []),
                             ...(ageOfMoneyReportEnabled
                               ? [
                             {
@@ -604,6 +639,14 @@ export function Overview({ dashboard }: OverviewProps) {
                             {
                                     name: 'budget-analysis-card' as const,
                                     text: t('Budget analysis'),
+                                  },
+                                ]
+                              : []),
+                            ...(balanceForecastReportEnabled
+                              ? [
+                            {
+                                    name: 'balance-forecast-card' as const,
+                                    text: t('Balance forecast'),
                                   },
                                 ]
                               : []),
@@ -800,8 +843,7 @@ export function Overview({ dashboard }: OverviewProps) {
                             onCopyWidget(item.i, targetDashboardId)
                           }
                           />
-                      ) : widget.type === 'crossover-card' &&
-                          crossoverReportEnabled ? (
+                        ) : widget.type === 'crossover-card' ? (
                           <CrossoverCard
                             widgetId={item.i}
                             isEditing={isEditing}
@@ -877,6 +919,21 @@ export function Overview({ dashboard }: OverviewProps) {
                             onCopyWidget(item.i, targetDashboardId)
                           }
                         />
+                        ) : widget.type === 'balance-forecast-card' &&
+                          balanceForecastReportEnabled ? (
+                          <BalanceForecastCard
+                            widgetId={item.i}
+                            isEditing={isEditing}
+                            accounts={accounts}
+                            meta={widget.meta}
+                            onMetaChange={newMeta =>
+                              onMetaChange(item, newMeta)
+                            }
+                            onRemove={() => onRemoveWidget(item.i)}
+                            onCopy={targetDashboardId =>
+                              onCopyWidget(item.i, targetDashboardId)
+                            }
+                          />
                       ) : widget.type === 'markdown-card' ? (
                           <MarkdownCard
                             isEditing={isEditing}

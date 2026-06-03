@@ -1,4 +1,4 @@
-import { useIsTestEnv } from '#hooks/useIsTestEnv';
+import { useReducedMotion } from '#hooks/useReducedMotion';
 
 export const chartTheme = {
   colors: {
@@ -28,9 +28,9 @@ export function useRechartsAnimation(defaults?: {
   animationDuration?: number;
   isAnimationActive?: boolean;
 }) {
-  const isTestEnv = useIsTestEnv();
+  const reducedMotion = useReducedMotion();
 
-  if (isTestEnv) {
+  if (reducedMotion) {
     return {
       isAnimationActive: false,
       animationDuration: 0,

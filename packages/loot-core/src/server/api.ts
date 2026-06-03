@@ -38,6 +38,7 @@ import {
 } from './api-models';
 import type { AmountOPType, APIScheduleEntity } from './api-models';
 import { aqlQuery } from './aql';
+import { isTrackingBudget } from './budget/actions';
 import * as cloudStorage from './cloud-storage';
 import type { RemoteFile } from './cloud-storage';
 import * as db from './db';
@@ -224,7 +225,9 @@ handlers['api/download-budget'] = async function ({ syncId, password }) {
     await handlers['load-budget']({ id: localBudget.id });
     const result = await handlers['sync-budget']();
     if (result.error) {
-      throw new Error(getSyncError(result.error.reason, localBudget.id));
+      throw new Error(
+        getSyncError(result.error.reason, localBudget.id, result.error.meta),
+      );
     }
     return;
   }
@@ -253,7 +256,7 @@ handlers['api/sync'] = async function () {
   const { id } = prefs.getPrefs();
   const result = await handlers['sync-budget']();
   if (result.error) {
-    throw new Error(getSyncError(result.error.reason, id));
+    throw new Error(getSyncError(result.error.reason, id, result.error.meta));
   }
 };
 
@@ -393,6 +396,23 @@ handlers['api/budget-month'] = async function ({ month }) {
 
     categoryGroups: groups.map(group => {
       if (group.is_income) {
+        if (isTrackingBudget()) {
+          return {
+            ...categoryGroupModel.toExternal(group),
+            budgeted: value(`group-budget-${group.id}`),
+            received: value(`group-sum-amount-${group.id}`),
+            balance: value(`group-leftover-${group.id}`),
+
+            categories: group.categories.map(cat => ({
+              ...categoryModel.toExternal(cat),
+              budgeted: value(`budget-${cat.id}`),
+              received: value(`sum-amount-${cat.id}`),
+              balance: value(`leftover-${cat.id}`),
+              carryover: value(`carryover-${cat.id}`),
+            })),
+          };
+        }
+
         return {
           ...categoryGroupModel.toExternal(group),
           received: value('total-income'),
@@ -630,17 +650,20 @@ handlers['api/account-balance'] = withMutation(async function ({
 
 handlers['api/categories-get'] = async function ({
   grouped,
-}: { grouped? } = {}) {
+  hidden,
+}: { grouped?: boolean; hidden?: boolean } = {}) {
   checkFileOpen();
-  const result = await handlers['get-categories']();
+  const result = await handlers['get-categories']({ hidden });
   return grouped
     ? result.grouped.map(group => categoryGroupModel.toExternal(group))
     : result.list.map(category => categoryModel.toExternal(category));
 };
 
-handlers['api/category-groups-get'] = async function () {
+handlers['api/category-groups-get'] = async function ({
+  hidden,
+}: { hidden?: boolean } = {}) {
   checkFileOpen();
-  const groups = await handlers['get-category-groups']();
+  const groups = await handlers['get-category-groups']({ hidden });
   return groups.map(group => categoryGroupModel.toExternal(group));
 };
 
