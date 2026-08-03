@@ -14,6 +14,7 @@ function allWidgetTypes<T extends DashboardWidgetEntity['type'][]>(
 const ALL_WIDGET_TYPES = allWidgetTypes(
   'net-worth-card',
   'cash-flow-card',
+  'cash-flow-card-forecast',
   'spending-card',
   'crossover-card',
   'budget-analysis-card',

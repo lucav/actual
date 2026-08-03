@@ -34,6 +34,7 @@ export function isWidgetType(
   return [
     'net-worth-card',
     'cash-flow-card',
+    'cash-flow-card-forecast',
     'spending-card',
     'crossover-card',
     'budget-analysis-card',

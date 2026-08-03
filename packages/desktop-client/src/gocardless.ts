@@ -30,6 +30,9 @@ function _authorize(
             });
 
             if ('error' in resp) return resp;
+            if ('error_code' in resp) {
+              return { error: 'unknown', message: resp.error_type };
+            }
             const { link, requisitionId } = resp;
             window.Actual.openURLInBrowser(link);
 

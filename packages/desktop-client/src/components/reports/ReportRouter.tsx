@@ -33,7 +33,6 @@ function ReportBoundary({ children }: { children: ReactNode }) {
 }
 
 export function ReportRouter() {
-  const ageOfMoneyReportEnabled = useFeatureFlag('ageOfMoneyReport');
   const balanceForecastReportEnabled = useFeatureFlag('balanceForecastReport');
   const budgetAnalysisReportEnabled = useFeatureFlag('budgetAnalysisReport');
   const sankeyReportEnabled = useFeatureFlag('sankeyReport');
@@ -74,28 +73,39 @@ export function ReportRouter() {
           </ReportBoundary>
         }
       />
-      {ageOfMoneyReportEnabled && (
-        <>
-          <Route
-            path="/age-of-money"
-            element={
-              <ReportBoundary>
-                <AgeOfMoney />
-              </ReportBoundary>
-            }
-          />
-          <Route
-            path="/age-of-money/:id"
-            element={
-              <ReportBoundary>
-                <AgeOfMoney />
-              </ReportBoundary>
-            }
-          />
-        </>
-      )}
-      <Route path="/cash-flow-forecast" element={<CashFlowForecast />} />
-      <Route path="/cash-flow-forecast/:id" element={<CashFlowForecast />} />      <Route
+      <Route
+        path="/age-of-money"
+        element={
+          <ReportBoundary>
+            <AgeOfMoney />
+          </ReportBoundary>
+        }
+      />
+      <Route
+        path="/age-of-money/:id"
+        element={
+          <ReportBoundary>
+            <AgeOfMoney />
+          </ReportBoundary>
+        }
+      />
+      <Route
+        path="/cash-flow-forecast"
+        element={
+          <ReportBoundary>
+            <CashFlowForecast />
+          </ReportBoundary>
+        }
+      />
+      <Route
+        path="/cash-flow-forecast/:id"
+        element={
+          <ReportBoundary>
+            <CashFlowForecast />
+          </ReportBoundary>
+        }
+      />
+      <Route
         path="/cash-flow"
         element={
           <ReportBoundary>
