@@ -22,27 +22,6 @@ import type {
   MarkdownWidget,
 } from '@actual-app/core/types/models';
 
-import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
-import { DashboardHeader } from './DashboardHeader';
-import { DashboardSelector } from './DashboardSelector';
-import { LoadingIndicator } from './LoadingIndicator';
-import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
-import { BalanceForecastCard } from './reports/BalanceForecastCard';
-import { BudgetAnalysisCard } from './reports/BudgetAnalysisCard';
-import { CalendarCard } from './reports/CalendarCard';
-import { CashFlowCard } from './reports/CashFlowCard';
-import { CashFlowCardForecast } from './reports/CashFlowCardForecast';
-import { CrossoverCard } from './reports/CrossoverCard';
-import { CustomReportListCards } from './reports/CustomReportListCards';
-import { FormulaCard } from './reports/FormulaCard';
-import { MarkdownCard } from './reports/MarkdownCard';
-import { MissingReportCard } from './reports/MissingReportCard';
-import { NetWorthCard } from './reports/NetWorthCard';
-import { SankeyCard } from './reports/SankeyCard';
-import { SpendingCard } from './reports/SpendingCard';
-import './overview.scss';
-import { SummaryCard } from './reports/SummaryCard';
-
 import { MOBILE_NAV_HEIGHT } from '#components/mobile/MobileNavTabs';
 import { MobilePageHeader, Page } from '#components/Page';
 import { useAccounts } from '#hooks/useAccounts';
@@ -69,6 +48,27 @@ import {
   useUpdateDashboardWidgetMutation,
   useUpdateDashboardWidgetsMutation,
 } from '#reports/mutations';
+
+import { NON_DRAGGABLE_AREA_CLASS_NAME } from './constants';
+import { DashboardHeader } from './DashboardHeader';
+import './overview.scss';
+import { DashboardSelector } from './DashboardSelector';
+import { LoadingIndicator } from './LoadingIndicator';
+import { AgeOfMoneyCard } from './reports/AgeOfMoneyCard';
+import { BalanceForecastCard } from './reports/BalanceForecastCard';
+import { BudgetAnalysisCard } from './reports/BudgetAnalysisCard';
+import { CalendarCard } from './reports/CalendarCard';
+import { CashFlowCard } from './reports/CashFlowCard';
+import { CashFlowCardForecast } from './reports/CashFlowCardForecast';
+import { CrossoverCard } from './reports/CrossoverCard';
+import { CustomReportListCards } from './reports/CustomReportListCards';
+import { FormulaCard } from './reports/FormulaCard';
+import { MarkdownCard } from './reports/MarkdownCard';
+import { MissingReportCard } from './reports/MissingReportCard';
+import { NetWorthCard } from './reports/NetWorthCard';
+import { SankeyCard } from './reports/SankeyCard';
+import { SpendingCard } from './reports/SpendingCard';
+import { SummaryCard } from './reports/SummaryCard';
 
 function isCustomReportWidget(
   widget: DashboardWidgetEntity,
@@ -115,6 +115,9 @@ export function Overview({ dashboard }: OverviewProps) {
   const firstDayOfWeekIdx = _firstDayOfWeekIdx || '0';
   const budgetAnalysisReportEnabled = useFeatureFlag('budgetAnalysisReport');
   const balanceForecastReportEnabled = useFeatureFlag('balanceForecastReport');
+  const cashFlowForecastReportEnabled = useFeatureFlag(
+    'cashFlowForecastReport',
+  );
 
   const formulaMode = useFeatureFlag('formulaMode');
 
@@ -582,10 +585,6 @@ export function Overview({ dashboard }: OverviewProps) {
                               text: t('Cash flow graph'),
                             },
                             {
-                              name: 'cash-flow-card-forecast' as const,
-                              text: t('Cash flow graph (Forecast)'),
-                            },
-                            {
                               name: 'net-worth-card' as const,
                               text: t('Net worth graph'),
                             },
@@ -603,7 +602,7 @@ export function Overview({ dashboard }: OverviewProps) {
                             },
                             ...(budgetAnalysisReportEnabled
                               ? [
-                            {
+                                  {
                                     name: 'budget-analysis-card' as const,
                                     text: t('Budget analysis'),
                                   },
@@ -611,9 +610,17 @@ export function Overview({ dashboard }: OverviewProps) {
                               : []),
                             ...(balanceForecastReportEnabled
                               ? [
-                            {
+                                  {
                                     name: 'balance-forecast-card' as const,
                                     text: t('Balance forecast'),
+                                  },
+                                ]
+                              : []),
+                            ...(cashFlowForecastReportEnabled
+                              ? [
+                                  {
+                                    name: 'cash-flow-card-forecast' as const,
+                                    text: t('Cash flow graph (Forecast)'),
                                   },
                                 ]
                               : []),
@@ -639,7 +646,7 @@ export function Overview({ dashboard }: OverviewProps) {
                               : []),
                             ...(sankeyFeatureFlag
                               ? [
-                            {
+                                  {
                                     name: 'sankey-card' as const,
                                     text: t('Sankey card'),
                                   },
@@ -773,10 +780,10 @@ export function Overview({ dashboard }: OverviewProps) {
                 resizeConfig={{
                   enabled: currentBreakpoint === 'desktop' && isEditing,
                 }}
-              onLayoutChange={
-                currentBreakpoint === 'desktop' ? onLayoutChange : undefined
-              }
-            >
+                onLayoutChange={
+                  currentBreakpoint === 'desktop' ? onLayoutChange : undefined
+                }
+              >
                 {currentLayout.map(item => {
                   const widget = widgetMap.get(item.i);
 
@@ -785,7 +792,7 @@ export function Overview({ dashboard }: OverviewProps) {
                   }
 
                   return (
-                <div key={item.i}>
+                    <div key={item.i}>
                       <ErrorBoundary
                         fallbackRender={() => (
                           <MissingReportCard
@@ -796,12 +803,12 @@ export function Overview({ dashboard }: OverviewProps) {
                           </MissingReportCard>
                         )}
                       >
-                      {widget.type === 'net-worth-card' ? (
+                        {widget.type === 'net-worth-card' ? (
                           <NetWorthCard
                             widgetId={item.i}
                             isEditing={isEditing}
                             accounts={accounts}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
@@ -811,7 +818,7 @@ export function Overview({ dashboard }: OverviewProps) {
                             widgetId={item.i}
                             isEditing={isEditing}
                             accounts={accounts}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
@@ -825,42 +832,34 @@ export function Overview({ dashboard }: OverviewProps) {
                               onMetaChange(item, newMeta)
                             }
                           />
-                      ) : widget.type === 'cash-flow-card' ? (
+                        ) : widget.type === 'cash-flow-card' ? (
                           <CashFlowCard
                             widgetId={item.i}
                             isEditing={isEditing}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
                           />
-                  ) : widget.type === 'cash-flow-card-forecast' ? (
-                    <CashFlowCardForecast
-                      widgetId={item.i}
-                      isEditing={isEditing}
-                      meta={widget.meta}
-                      onMetaChange={newMeta => onMetaChange(item, newMeta)}
-                      onRemove={() => onRemoveWidget(item.i)}
-                    />
                         ) : widget.type === 'spending-card' ? (
                           <SpendingCard
                             widgetId={item.i}
                             isEditing={isEditing}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
                           />
-                      ) : widget.type === 'budget-analysis-card' &&
-                        budgetAnalysisReportEnabled ? (
-                        <BudgetAnalysisCard
-                          widgetId={item.i}
-                          isEditing={isEditing}
-                          meta={widget.meta}
+                        ) : widget.type === 'budget-analysis-card' &&
+                          budgetAnalysisReportEnabled ? (
+                          <BudgetAnalysisCard
+                            widgetId={item.i}
+                            isEditing={isEditing}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
-                        />
+                          />
                         ) : widget.type === 'balance-forecast-card' &&
                           balanceForecastReportEnabled ? (
                           <BalanceForecastCard
@@ -872,45 +871,45 @@ export function Overview({ dashboard }: OverviewProps) {
                               onMetaChange(item, newMeta)
                             }
                           />
-                      ) : widget.type === 'markdown-card' ? (
+                        ) : widget.type === 'markdown-card' ? (
                           <MarkdownCard
                             widgetId={item.i}
                             isEditing={isEditing}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
                           />
-                      ) : widget.type === 'custom-report' ? (
+                        ) : widget.type === 'custom-report' ? (
                           <CustomReportListCards
                             widgetId={item.i}
                             isEditing={isEditing}
-                          report={customReportMap.get(widget.meta.id)}
+                            report={customReportMap.get(widget.meta.id)}
                           />
-                      ) : widget.type === 'summary-card' ? (
+                        ) : widget.type === 'summary-card' ? (
                           <SummaryCard
                             widgetId={item.i}
                             isEditing={isEditing}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
                           />
-                      ) : widget.type === 'calendar-card' ? (
+                        ) : widget.type === 'calendar-card' ? (
                           <CalendarCard
                             widgetId={item.i}
                             isEditing={isEditing}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             firstDayOfWeekIdx={firstDayOfWeekIdx}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
                           />
-                      ) : widget.type === 'formula-card' && formulaMode ? (
+                        ) : widget.type === 'formula-card' && formulaMode ? (
                           <FormulaCard
                             widgetId={item.i}
                             isEditing={isEditing}
-                          meta={widget.meta}
+                            meta={widget.meta}
                             onMetaChange={newMeta =>
                               onMetaChange(item, newMeta)
                             }
@@ -925,9 +924,20 @@ export function Overview({ dashboard }: OverviewProps) {
                               onMetaChange(item, newMeta)
                             }
                           />
+                        ) : widget.type === 'cash-flow-card-forecast' &&
+                          cashFlowForecastReportEnabled ? (
+                          <CashFlowCardForecast
+                            widgetId={item.i}
+                            isEditing={isEditing}
+                            meta={widget.meta}
+                            onMetaChange={newMeta =>
+                              onMetaChange(item, newMeta)
+                            }
+                            onRemove={() => onRemoveWidget(item.i)}
+                          />
                         ) : null}
                       </ErrorBoundary>
-                </div>
+                    </div>
                   );
                 })}
               </ReactGridLayout>

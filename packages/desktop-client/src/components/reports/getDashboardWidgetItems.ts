@@ -15,6 +15,7 @@ type GetDashboardWidgetItemsParams = {
   crossoverReportEnabled: boolean;
   budgetAnalysisReportEnabled: boolean;
   balanceForecastReportEnabled: boolean;
+  cashFlowForecastReportEnabled: boolean;
 };
 
 type DashboardWidgetMenuName =
@@ -22,6 +23,7 @@ type DashboardWidgetMenuName =
   | 'budget-analysis-card'
   | 'calendar-card'
   | 'cash-flow-card'
+  | 'cash-flow-card-forecast'
   | 'crossover-card'
   | 'custom-report'
   | 'formula-card'
@@ -48,6 +50,7 @@ export function getDashboardWidgetItems({
   crossoverReportEnabled,
   budgetAnalysisReportEnabled,
   balanceForecastReportEnabled,
+  cashFlowForecastReportEnabled,
 }: GetDashboardWidgetItemsParams): MenuItem<DashboardWidgetMenuName>[] {
   const items: MenuItem<DashboardWidgetMenuName>[] = [
     {
@@ -98,6 +101,13 @@ export function getDashboardWidgetItems({
     items.splice(findItemIndex(items, 'markdown-card'), 0, {
       name: 'balance-forecast-card',
       text: t('Balance forecast'),
+    });
+  }
+
+  if (cashFlowForecastReportEnabled) {
+    items.splice(findItemIndex(items, 'markdown-card'), 0, {
+      name: 'cash-flow-card-forecast',
+      text: t('Cash flow graph (Forecast)'),
     });
   }
 

@@ -7,23 +7,22 @@ function getNames(items: ReturnType<typeof getDashboardWidgetItems>) {
   return items.filter(item => item !== Menu.line).map(item => item.name);
 }
 
+const baseParams = {
+  t: (value: string) => value,
+  customReports: [] as { id: string; name: string }[],
+  formulaMode: false,
+  crossoverReportEnabled: false,
+  budgetAnalysisReportEnabled: false,
+  balanceForecastReportEnabled: false,
+  cashFlowForecastReportEnabled: false,
+};
+
 describe('getDashboardWidgetItems', () => {
   it('includes the balance forecast card only when the flag is enabled', () => {
-    const disabled = getDashboardWidgetItems({
-      t: value => value,
-      customReports: [],
-      formulaMode: false,
-      crossoverReportEnabled: false,
-      budgetAnalysisReportEnabled: false,
-      balanceForecastReportEnabled: false,
-    });
+    const disabled = getDashboardWidgetItems(baseParams);
 
     const enabled = getDashboardWidgetItems({
-      t: value => value,
-      customReports: [],
-      formulaMode: false,
-      crossoverReportEnabled: false,
-      budgetAnalysisReportEnabled: false,
+      ...baseParams,
       balanceForecastReportEnabled: true,
     });
 
@@ -31,14 +30,22 @@ describe('getDashboardWidgetItems', () => {
     expect(getNames(enabled)).toContain('balance-forecast-card');
   });
 
+  it('includes the cash flow forecast card only when the flag is enabled', () => {
+    const disabled = getDashboardWidgetItems(baseParams);
+
+    const enabled = getDashboardWidgetItems({
+      ...baseParams,
+      cashFlowForecastReportEnabled: true,
+    });
+
+    expect(getNames(disabled)).not.toContain('cash-flow-card-forecast');
+    expect(getNames(enabled)).toContain('cash-flow-card-forecast');
+  });
+
   it('keeps custom report entries after a divider', () => {
     const items = getDashboardWidgetItems({
-      t: value => value,
+      ...baseParams,
       customReports: [{ id: 'abc', name: 'Custom Budget Review' }],
-      formulaMode: false,
-      crossoverReportEnabled: false,
-      budgetAnalysisReportEnabled: false,
-      balanceForecastReportEnabled: false,
     });
 
     expect(items).toContain(Menu.line);

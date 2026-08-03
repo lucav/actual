@@ -93,20 +93,7 @@ const exportModel = {
         );
       }
 
-      if (
-        ![
-          'net-worth-card',
-          'cash-flow-card',
-          'cash-flow-card-forecast',
-          'spending-card',
-          'crossover-card',
-          'custom-report',
-          'markdown-card',
-          'summary-card',
-          'calendar-card',
-          'formula-card',
-        ].includes(widget.type)
-      ) {
+      if (!isWidgetType(widget.type)) {
         throw new ValidationError(
           `Invalid widget.${idx}.type value ${String(widget.type)}.`,
         );
